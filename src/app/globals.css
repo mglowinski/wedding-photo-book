@@ -19,6 +19,12 @@ body {
   background: rgb(var(--background-rgb));
 }
 
+/* Make placeholders darker */
+::placeholder {
+  color: rgba(0, 0, 0, 0.7) !important;
+  opacity: 1 !important;
+}
+
 @layer components {
   .btn {
     @apply px-4 py-2 rounded-md font-medium transition-colors;

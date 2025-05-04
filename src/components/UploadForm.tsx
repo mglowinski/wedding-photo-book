@@ -176,7 +176,7 @@ export default function UploadForm() {
             <input
               type="text"
               id="name"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
@@ -190,7 +190,7 @@ export default function UploadForm() {
             </label>
             <textarea
               id="message"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Add a message or wish"
