@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getStorage } from 'firebase/storage';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 
 /**
@@ -20,12 +20,13 @@ import { getFirestore } from 'firebase/firestore';
 
 // Replace these values with your Firebase project configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBfNE_mgGiuirvaLE7opF0a28nJD9UaB40",
+  authDomain: "wedding-guest-book-e1cf3.firebaseapp.com",
+  projectId: "wedding-guest-book-e1cf3",
+  storageBucket: "wedding-guest-book-e1cf3.firebasestorage.app",
+  messagingSenderId: "863380958251",
+  appId: "1:863380958251:web:678d08bc57e8ad0a914e6e",
+  "measurementId": "G-TSY1EF4LZ7"
 };
 
 // Initialize Firebase
@@ -33,5 +34,18 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const db = getFirestore(app);
+
+// Fix for CORS issues with Firebase Storage
+// Make sure your Storage rules are properly configured in Firebase Console:
+// Storage > Rules
+// Example rules for this app:
+// rules_version = '2';
+// service firebase.storage {
+//   match /b/{bucket}/o {
+//     match /uploads/{allPaths=**} {
+//       allow read, write: if true; // For testing only, restrict in production
+//     }
+//   }
+// }
 
 export default app; 

@@ -76,8 +76,17 @@ export default function UploadForm() {
       const fileName = `${activeTab}_${uuidv4()}.${fileExtension}`;
       const storageRef = ref(storage, `uploads/${fileName}`);
       
+      // Upload file with metadata to help with CORS
+      const metadata = {
+        contentType: file.type,
+        customMetadata: {
+          'uploadedBy': name,
+          'uploadTime': new Date().toISOString(),
+        }
+      };
+      
       // Upload file
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
       
       uploadTask.on(
         'state_changed',
@@ -88,39 +97,58 @@ export default function UploadForm() {
           setUploadProgress(progress);
         },
         (error) => {
-          setError('Error uploading file: ' + error.message);
+          console.error('Upload error:', error);
+          
+          // Handle specific errors more elegantly
+          if (error.message.includes('CORS')) {
+            setError('CORS error: The server is blocking this upload. Please check Firebase Storage rules.');
+          } else if (error.message.includes('unauthorized')) {
+            setError('Permission denied: You do not have permission to upload files.');
+          } else {
+            setError('Error uploading file: ' + error.message);
+          }
+          
           setUploading(false);
         },
         async () => {
-          // Get download URL
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          
-          // Save to Firestore
-          await addDoc(collection(db, 'media'), {
-            name,
-            message,
-            fileURL: downloadURL,
-            fileName,
-            fileType: activeTab,
-            mimeType: file.type,
-            createdAt: serverTimestamp(),
-          });
-          
-          setSuccess(true);
-          setUploading(false);
-          
-          // Reset form after 2 seconds
-          setTimeout(() => {
-            setFile(null);
-            setName('');
-            setMessage('');
-            setUploadProgress(0);
-            setSuccess(false);
-            router.push('/');
-          }, 2000);
+          try {
+            // Get download URL
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            
+            // Save to Firestore
+            await addDoc(collection(db, 'media'), {
+              name,
+              message,
+              fileURL: downloadURL,
+              fileName,
+              fileType: activeTab,
+              mimeType: file.type,
+              createdAt: serverTimestamp(),
+            });
+            
+            setSuccess(true);
+          } catch (err) {
+            console.error('Firestore error:', err);
+            setError('Error saving to database: ' + (err as Error).message);
+          } finally {
+            setUploading(false);
+            
+            // Reset form after 2 seconds on success
+            if (success) {
+              setTimeout(() => {
+                setFile(null);
+                setName('');
+                setMessage('');
+                setUploadProgress(0);
+                setSuccess(false);
+                router.push('/');
+              }, 2000);
+            }
+          }
         }
       );
     } catch (err) {
+      console.error('General error:', err);
       setError('Error: ' + (err as Error).message);
       setUploading(false);
     }

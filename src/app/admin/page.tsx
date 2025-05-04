@@ -23,6 +23,64 @@ export default function AdminPage() {
             </div>
           </div>
           
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-black mb-4">Firebase Storage CORS Issues</h2>
+              
+              <div className="space-y-4 text-black">
+                <p>If you encounter CORS issues with Firebase Storage, follow these steps:</p>
+                
+                <ol className="list-decimal pl-5 space-y-3">
+                  <li>
+                    <strong>Update Firebase Storage Rules:</strong>
+                    <ul className="list-disc pl-5 mt-1">
+                      <li>Go to Firebase Console &gt; Storage &gt; Rules</li>
+                      <li>Paste the following rules:</li>
+                      <pre className="bg-gray-100 p-2 rounded mt-2 overflow-x-auto text-sm">
+                        {`rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if true;  // ONLY FOR TESTING
+    }
+  }
+}`}
+                      </pre>
+                      <li className="text-red-600 mt-2">Warning: The above rule allows unrestricted access to your storage. Use only for testing!</li>
+                    </ul>
+                  </li>
+                  
+                  <li className="mt-4">
+                    <strong>Configure CORS for your storage bucket:</strong>
+                    <p className="mt-1">You have two options:</p>
+                    <ul className="list-disc pl-5 mt-1">
+                      <li>
+                        <strong>Option 1:</strong> Use the GCloud CLI (if installed):
+                        <pre className="bg-gray-100 p-2 rounded mt-2 overflow-x-auto text-sm">
+                          {`# Create a cors.json file
+echo '[{"origin":["*"],"method":["GET","POST","PUT","DELETE"],"maxAgeSeconds":3600}]' > cors.json
+
+# Apply CORS configuration
+gsutil cors set cors.json gs://wedding-guest-book-e1cf3.firebasestorage.app`}
+                        </pre>
+                      </li>
+                      <li className="mt-2">
+                        <strong>Option 2:</strong> Use the Firebase console:
+                        <ol className="list-decimal pl-5 mt-1">
+                          <li>Go to Google Cloud Console</li>
+                          <li>Navigate to Storage &gt; Buckets &gt; your-bucket</li>
+                          <li>Click on "Edit Bucket"</li>
+                          <li>Look for CORS configuration</li>
+                          <li>Add a new CORS entry allowing your domain</li>
+                        </ol>
+                      </li>
+                    </ul>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="p-6">
               <h2 className="text-xl font-semibold text-black mb-4">Setup Instructions</h2>
