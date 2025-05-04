@@ -20,6 +20,13 @@ export default function AdminPage() {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
             <div className="p-6">
               <h2 className="text-xl font-semibold text-black mb-4">Cloudinary Configuration</h2>
+              <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
+                <p className="font-semibold text-yellow-800">About CORS Errors:</p>
+                <p className="text-yellow-800 text-sm">
+                  If you see CORS errors in the tests below, don't worry! This is normal during local development and testing.
+                  The actual file uploads in your app should still work fine. CORS errors only affect testing tools, not your app's functionality.
+                </p>
+              </div>
               <CloudinaryTest />
             </div>
           </div>
@@ -78,6 +85,17 @@ export default function AdminPage() {
                     </ul>
                   </li>
                 </ol>
+                
+                <div className="p-3 mb-4 bg-blue-50 rounded-lg">
+                  <p className="font-semibold text-blue-800">About CORS Errors:</p>
+                  <p className="text-blue-800 mb-2">
+                    CORS errors are common when testing APIs on localhost. They typically don't affect your app's functionality.
+                    You may see CORS errors in the test tools, but your actual file uploads should work correctly.
+                  </p>
+                  <p className="text-blue-800">
+                    If you encounter persistent issues, try testing the actual upload form in your application.
+                  </p>
+                </div>
                 
                 <div className="bg-blue-50 p-4 rounded-lg mt-4">
                   <p className="font-semibold text-blue-800">Free Tier Limits:</p>

@@ -45,6 +45,8 @@ export const uploadToCloudinary = async (file: File, folder: string = 'uploads')
           `https://api.cloudinary.com/v1_1/dplt4mqsy/auto/upload`,
           {
             method: 'POST',
+            // Add CORS mode explicitly
+            mode: 'cors',
             body: formData,
           }
         );
