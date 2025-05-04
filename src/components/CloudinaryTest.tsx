@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { cloudinaryConfig } from '@/lib/cloudinary';
 
 export default function CloudinaryTest() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
-  const [cloudName, setCloudName] = useState('dplt4mqsy');
+  const [cloudName, setCloudName] = useState(cloudinaryConfig.cloud_name);
   const [testUploadStatus, setTestUploadStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
 
@@ -22,7 +23,7 @@ export default function CloudinaryTest() {
       // Create FormData
       const formData = new FormData();
       formData.append('file', base64Image);
-      formData.append('upload_preset', 'wedding_guestbook');
+      formData.append('upload_preset', cloudinaryConfig.upload_preset);
       formData.append('folder', 'test');
       
       // Try to upload to Cloudinary as a connection test
@@ -59,7 +60,7 @@ export default function CloudinaryTest() {
       } else if (errorMsg.includes('HTTP error: 401')) {
         setMessage('Authentication error. Check your API key and secret.');
       } else if (errorMsg.includes('unknown upload preset')) {
-        setMessage(`Upload preset "wedding_guestbook" not found. Create it in your Cloudinary dashboard.`);
+        setMessage(`Upload preset "${cloudinaryConfig.upload_preset}" not found. Create it in your Cloudinary dashboard.`);
       } else {
         setMessage(`Cloudinary error: ${errorMsg}`);
       }
@@ -77,7 +78,7 @@ export default function CloudinaryTest() {
       // Create FormData for the upload
       const formData = new FormData();
       formData.append('file', base64Image);
-      formData.append('upload_preset', 'wedding_guestbook'); // Your custom preset
+      formData.append('upload_preset', cloudinaryConfig.upload_preset);
       formData.append('folder', 'test');
       
       // Try to upload to Cloudinary
@@ -183,7 +184,7 @@ export default function CloudinaryTest() {
             <div className="mt-2 text-sm">
               <p className="font-semibold">Upload Troubleshooting:</p>
               <ol className="list-decimal pl-5 mt-1 space-y-1">
-                <li>Make sure your <code className="bg-gray-100 px-1 py-0.5 rounded">wedding_guestbook</code> upload preset is set to "unsigned"</li>
+                <li>Make sure your <code className="bg-gray-100 px-1 py-0.5 rounded">{cloudinaryConfig.upload_preset}</code> upload preset is set to "unsigned"</li>
                 <li>Check your upload preset settings in Cloudinary dashboard (Settings &gt; Upload)</li>
                 <li>Verify that your account has upload permissions</li>
                 <li>Try updating the preset with less restrictions (allow all file types)</li>

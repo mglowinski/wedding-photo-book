@@ -1,26 +1,24 @@
-// Cloudinary configuration
+// Cloudinary configuration for browser environment
 // Sign up for free at https://cloudinary.com/users/register/free
 
-// Import the v2 api as per Cloudinary documentation
-import { v2 as cloudinary } from 'cloudinary';
+// We're not importing the full Cloudinary SDK since it has Node.js dependencies
+// Instead, we'll just use the browser-compatible upload API
 
-// Initialize Cloudinary with your credentials
-// You'll need to sign up for a free account to get these values
-cloudinary.config({
-  cloud_name: 'dplt4mqsy', // Replace with your cloud name
-  api_key: '641591769877653',       // Replace with your API key
-  api_secret: 'WxX2v1uvD9SP_uXGtpFXhTNW0FM', // Replace with your API secret
-  secure: true                   // Use HTTPS
-});
+// Store Cloudinary configuration 
+const cloudConfig = {
+  cloud_name: 'dplt4mqsy',
+  api_key: '641591769877653',
+  api_secret: 'WxX2v1uvD9SP_uXGtpFXhTNW0FM',
+  upload_preset: 'wedding_guestbook'
+};
 
 /**
- * Uploads a file to Cloudinary
+ * Uploads a file to Cloudinary (browser-safe implementation)
  * @param file File to upload
- * @param options Upload options
- * @returns Promise with upload result
+ * @param folder Optional folder name
+ * @returns Promise with the secure URL of the uploaded file
  */
 export const uploadToCloudinary = async (file: File, folder: string = 'uploads'): Promise<string> => {
-  // Convert file to base64 string
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -37,15 +35,14 @@ export const uploadToCloudinary = async (file: File, folder: string = 'uploads')
         // Create a FormData object
         const formData = new FormData();
         formData.append('file', `data:${file.type};base64,${base64Data}`);
-        formData.append('upload_preset', 'wedding_guestbook'); // Using your custom preset
+        formData.append('upload_preset', cloudConfig.upload_preset);
         formData.append('folder', folder);
         
         // Upload using the upload preset (no API secret needed in browser)
         const uploadResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/dplt4mqsy/auto/upload`,
+          `https://api.cloudinary.com/v1_1/${cloudConfig.cloud_name}/auto/upload`,
           {
             method: 'POST',
-            // Add CORS mode explicitly
             mode: 'cors',
             body: formData,
           }
@@ -68,4 +65,5 @@ export const uploadToCloudinary = async (file: File, folder: string = 'uploads')
   });
 };
 
-export default cloudinary; 
+// Export the configuration for use in other components
+export const cloudinaryConfig = cloudConfig; 
