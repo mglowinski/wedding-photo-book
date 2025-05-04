@@ -38,7 +38,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
         <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiLock className="text-3xl text-gray-600" />
         </div>
-        <p className="text-gray-800">
+        <p className="text-black">
           This area is password protected. Please enter the password to view the gallery.
         </p>
       </div>
@@ -52,7 +52,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
         )}
         
         <div>
-          <label htmlFor="password" className="block text-gray-900 font-medium mb-2">
+          <label htmlFor="password" className="block text-black font-medium mb-2">
             Password
           </label>
           <input

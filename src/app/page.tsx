@@ -12,7 +12,7 @@ export default function Home() {
           <h2 className="text-2xl md:text-3xl font-semibold text-secondary mb-6">
             Joanna & Maciej
           </h2>
-          <p className="text-xl md:text-2xl font-medium text-gray-700">
+          <p className="text-xl md:text-2xl font-medium text-black">
             May 24th, 2025
           </p>
         </header>
@@ -20,7 +20,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden mb-12">
           <div className="p-8 text-center">
             <h3 className="text-2xl font-semibold mb-4">Share Your Memories</h3>
-            <p className="text-lg text-gray-800 mb-6">
+            <p className="text-lg text-black mb-6">
               Capture and share your favorite moments from our celebration!
             </p>
             
@@ -30,14 +30,14 @@ export default function Home() {
                 Upload Media
               </Link>
               <Link href="/gallery" 
-                className="btn bg-gray-200 hover:bg-gray-300 text-gray-800 text-center text-lg py-3">
+                className="btn bg-gray-200 hover:bg-gray-300 text-black text-center text-lg py-3">
                 View Gallery
               </Link>
             </div>
           </div>
         </div>
         
-        <div className="text-center text-gray-500 text-sm">
+        <div className="text-center text-black text-sm">
           <p>© 2025 Joanna & Maciej | All rights reserved</p>
         </div>
       </div>

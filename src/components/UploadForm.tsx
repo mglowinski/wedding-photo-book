@@ -134,7 +134,7 @@ export default function UploadForm() {
           className={`flex items-center justify-center py-3 px-4 font-medium ${
             activeTab === 'photo'
               ? 'text-primary border-b-2 border-primary'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-black hover:text-primary'
           }`}
         >
           <FiImage className="mr-2" /> Photos
@@ -144,7 +144,7 @@ export default function UploadForm() {
           className={`flex items-center justify-center py-3 px-4 font-medium ${
             activeTab === 'video'
               ? 'text-primary border-b-2 border-primary'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-black hover:text-primary'
           }`}
         >
           <FiVideo className="mr-2" /> Videos
@@ -154,7 +154,7 @@ export default function UploadForm() {
           className={`flex items-center justify-center py-3 px-4 font-medium ${
             activeTab === 'audio'
               ? 'text-primary border-b-2 border-primary'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-black hover:text-primary'
           }`}
         >
           <FiMic className="mr-2" /> Audio
@@ -170,7 +170,7 @@ export default function UploadForm() {
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="name" className="block text-gray-900 font-medium mb-2">
+            <label htmlFor="name" className="block text-black font-medium mb-2">
               Your Name
             </label>
             <input
@@ -185,7 +185,7 @@ export default function UploadForm() {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="message" className="block text-gray-900 font-medium mb-2">
+            <label htmlFor="message" className="block text-black font-medium mb-2">
               Message (Optional)
             </label>
             <textarea
@@ -199,7 +199,7 @@ export default function UploadForm() {
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-900 font-medium mb-2">
+            <label className="block text-black font-medium mb-2">
               Upload {activeTab === 'photo' ? 'Photo' : activeTab === 'video' ? 'Video' : 'Audio'}
             </label>
             <div
@@ -229,10 +229,10 @@ export default function UploadForm() {
                 ) : (
                   <>
                     <FiUpload className="text-3xl text-gray-400 mb-2" />
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-black">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-black mt-1">
                       {activeTab === 'photo'
                         ? 'JPG, PNG, GIF, WEBP'
                         : activeTab === 'video'
@@ -260,7 +260,7 @@ export default function UploadForm() {
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
-              <p className="text-sm text-gray-600 mt-1 text-center">
+              <p className="text-sm text-black mt-1 text-center">
                 Uploading... {uploadProgress}%
               </p>
             </div>

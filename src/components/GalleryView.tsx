@@ -77,7 +77,7 @@ export default function GalleryView() {
           <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/4"></div>
         </div>
-        <p className="mt-6 text-gray-700">Loading gallery...</p>
+        <p className="mt-6 text-black">Loading gallery...</p>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export default function GalleryView() {
   if (filteredItems.length === 0) {
     return (
       <div className="text-center py-10">
-        <p className="text-xl text-gray-800">
+        <p className="text-xl text-black">
           {filter === 'all' 
             ? 'No media items found. Be the first to upload!' 
             : `No ${filter} uploads found.`}
@@ -118,7 +118,7 @@ export default function GalleryView() {
             className={`px-3 py-1 rounded-md ${
               filter === 'all' 
                 ? 'bg-primary text-white' 
-                : 'bg-gray-100 hover:bg-gray-200'
+                : 'bg-gray-100 hover:bg-gray-200 text-black'
             }`}
           >
             All
@@ -128,7 +128,7 @@ export default function GalleryView() {
             className={`px-3 py-1 rounded-md flex items-center ${
               filter === 'photo' 
                 ? 'bg-primary text-white' 
-                : 'bg-gray-100 hover:bg-gray-200'
+                : 'bg-gray-100 hover:bg-gray-200 text-black'
             }`}
           >
             <FiImage className="mr-1" /> Photos
@@ -138,7 +138,7 @@ export default function GalleryView() {
             className={`px-3 py-1 rounded-md flex items-center ${
               filter === 'video' 
                 ? 'bg-primary text-white' 
-                : 'bg-gray-100 hover:bg-gray-200'
+                : 'bg-gray-100 hover:bg-gray-200 text-black'
             }`}
           >
             <FiVideo className="mr-1" /> Videos
@@ -148,7 +148,7 @@ export default function GalleryView() {
             className={`px-3 py-1 rounded-md flex items-center ${
               filter === 'audio' 
                 ? 'bg-primary text-white' 
-                : 'bg-gray-100 hover:bg-gray-200'
+                : 'bg-gray-100 hover:bg-gray-200 text-black'
             }`}
           >
             <FiMic className="mr-1" /> Audio
@@ -162,13 +162,13 @@ export default function GalleryView() {
             <div className="p-4">
               <div className="flex justify-between items-start mb-3">
                 <h4 className="font-medium">{item.name}</h4>
-                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                <span className="text-xs bg-gray-100 text-black px-2 py-1 rounded-full">
                   {item.fileType}
                 </span>
               </div>
               
               {item.message && (
-                <p className="text-gray-800 text-sm mb-4">{item.message}</p>
+                <p className="text-black text-sm mb-4">{item.message}</p>
               )}
 
               <div className="mb-4">
@@ -205,7 +205,7 @@ export default function GalleryView() {
                 )}
               </div>
               
-              <div className="flex justify-between items-center text-xs text-gray-700">
+              <div className="flex justify-between items-center text-xs text-black">
                 <span>
                   {new Date(item.createdAt.toDate()).toLocaleString()}
                 </span>
