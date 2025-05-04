@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import FirebaseTest from '@/components/FirebaseTest';
+import CloudinaryTest from '@/components/CloudinaryTest';
 
 export default function AdminPage() {
   return (
@@ -15,6 +16,13 @@ export default function AdminPage() {
         
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-black mb-6">Admin Dashboard</h1>
+          
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-black mb-4">Cloudinary Configuration</h2>
+              <CloudinaryTest />
+            </div>
+          </div>
           
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
             <div className="p-6">

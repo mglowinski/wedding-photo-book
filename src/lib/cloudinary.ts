@@ -7,9 +7,9 @@ import { v2 as cloudinary } from 'cloudinary';
 // Initialize Cloudinary with your credentials
 // You'll need to sign up for a free account to get these values
 cloudinary.config({
-  cloud_name: 'YOUR_CLOUD_NAME', // Replace with your cloud name
-  api_key: 'YOUR_API_KEY',       // Replace with your API key
-  api_secret: 'YOUR_API_SECRET', // Replace with your API secret
+  cloud_name: 'dplt4mqsy', // Replace with your cloud name
+  api_key: '641591769877653',       // Replace with your API key
+  api_secret: 'WxX2v1uvD9SP_uXGtpFXhTNW0FM', // Replace with your API secret
   secure: true                   // Use HTTPS
 });
 
@@ -42,7 +42,7 @@ export const uploadToCloudinary = async (file: File, folder: string = 'uploads')
         
         // Upload using the upload preset (no API secret needed in browser)
         const uploadResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/auto/upload`,
+          `https://api.cloudinary.com/v1_1/dplt4mqsy/auto/upload`,
           {
             method: 'POST',
             body: formData,
