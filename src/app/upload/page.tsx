@@ -13,7 +13,7 @@ export default function UploadPage() {
         
         <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="p-8">
-            <h2 className="text-3xl font-bold text-center mb-6">Share Your Memories</h2>
+            <h2 className="text-3xl font-bold text-black text-center mb-6">Share Your Memories</h2>
             <UploadForm />
           </div>
         </div>

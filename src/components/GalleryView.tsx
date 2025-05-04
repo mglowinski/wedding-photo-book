@@ -111,7 +111,7 @@ export default function GalleryView() {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h3 className="text-xl font-semibold">Gallery</h3>
+        <h3 className="text-xl font-semibold text-black">Gallery</h3>
         <div className="flex space-x-2">
           <button 
             onClick={() => setFilter('all')}
@@ -161,7 +161,7 @@ export default function GalleryView() {
           <div key={item.id} className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
             <div className="p-4">
               <div className="flex justify-between items-start mb-3">
-                <h4 className="font-medium">{item.name}</h4>
+                <h4 className="font-medium text-black">{item.name}</h4>
                 <span className="text-xs bg-gray-100 text-black px-2 py-1 rounded-full">
                   {item.fileType}
                 </span>
