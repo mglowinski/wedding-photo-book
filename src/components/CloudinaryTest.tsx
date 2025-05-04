@@ -59,7 +59,7 @@ export default function CloudinaryTest() {
       // Create FormData for the upload
       const formData = new FormData();
       formData.append('file', base64Image);
-      formData.append('upload_preset', 'ml_default'); // Cloudinary's default unsigned preset
+      formData.append('upload_preset', 'wedding_guestbook'); // Your custom preset
       formData.append('folder', 'test');
       
       // Try to upload to Cloudinary
@@ -157,10 +157,10 @@ export default function CloudinaryTest() {
             <div className="mt-2 text-sm">
               <p className="font-semibold">Upload Troubleshooting:</p>
               <ol className="list-decimal pl-5 mt-1 space-y-1">
-                <li>Make sure the "ml_default" upload preset exists and is set to "unsigned"</li>
+                <li>Make sure your <code className="bg-gray-100 px-1 py-0.5 rounded">wedding_guestbook</code> upload preset is set to "unsigned"</li>
                 <li>Check your upload preset settings in Cloudinary dashboard (Settings &gt; Upload)</li>
                 <li>Verify that your account has upload permissions</li>
-                <li>Try creating a custom upload preset named <code className="bg-gray-100 px-1 py-0.5 rounded">wedding_guestbook</code></li>
+                <li>Try updating the preset with less restrictions (allow all file types)</li>
               </ol>
             </div>
           )}
@@ -171,9 +171,9 @@ export default function CloudinaryTest() {
         <p className="font-semibold text-yellow-800">Quick Help:</p>
         <ul className="list-disc pl-5 mt-1 text-yellow-800">
           <li>Your cloud name appears to be <strong>{cloudName}</strong></li>
-          <li>Make sure this cloud name appears in all places in <code className="bg-gray-100 px-1 py-0.5 rounded">src/lib/cloudinary.ts</code></li>
-          <li>If you've just signed up, check your email to verify your account</li>
-          <li>The "ml_default" preset should be available by default</li>
+          <li>You're using the <strong>wedding_guestbook</strong> upload preset</li>
+          <li>Make sure the preset is set to "Unsigned" in your Cloudinary dashboard</li>
+          <li>Check the preset settings to ensure it allows the file types you want to upload</li>
         </ul>
       </div>
     </div>

@@ -37,7 +37,7 @@ export const uploadToCloudinary = async (file: File, folder: string = 'uploads')
         // Create a FormData object
         const formData = new FormData();
         formData.append('file', `data:${file.type};base64,${base64Data}`);
-        formData.append('upload_preset', 'ml_default'); // Using default unsigned preset
+        formData.append('upload_preset', 'wedding_guestbook'); // Using your custom preset
         formData.append('folder', folder);
         
         // Upload using the upload preset (no API secret needed in browser)
