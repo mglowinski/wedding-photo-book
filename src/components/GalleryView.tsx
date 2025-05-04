@@ -77,7 +77,7 @@ export default function GalleryView() {
           <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/4"></div>
         </div>
-        <p className="mt-6 text-gray-500">Loading gallery...</p>
+        <p className="mt-6 text-gray-700">Loading gallery...</p>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export default function GalleryView() {
   if (filteredItems.length === 0) {
     return (
       <div className="text-center py-10">
-        <p className="text-xl text-gray-500">
+        <p className="text-xl text-gray-800">
           {filter === 'all' 
             ? 'No media items found. Be the first to upload!' 
             : `No ${filter} uploads found.`}
@@ -162,13 +162,13 @@ export default function GalleryView() {
             <div className="p-4">
               <div className="flex justify-between items-start mb-3">
                 <h4 className="font-medium">{item.name}</h4>
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
                   {item.fileType}
                 </span>
               </div>
               
               {item.message && (
-                <p className="text-gray-600 text-sm mb-4">{item.message}</p>
+                <p className="text-gray-800 text-sm mb-4">{item.message}</p>
               )}
 
               <div className="mb-4">
@@ -205,7 +205,7 @@ export default function GalleryView() {
                 )}
               </div>
               
-              <div className="flex justify-between items-center text-xs text-gray-500">
+              <div className="flex justify-between items-center text-xs text-gray-700">
                 <span>
                   {new Date(item.createdAt.toDate()).toLocaleString()}
                 </span>

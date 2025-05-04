@@ -170,7 +170,7 @@ export default function UploadForm() {
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="name" className="block text-gray-700 font-medium mb-2">
+            <label htmlFor="name" className="block text-gray-900 font-medium mb-2">
               Your Name
             </label>
             <input
@@ -185,7 +185,7 @@ export default function UploadForm() {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="message" className="block text-gray-700 font-medium mb-2">
+            <label htmlFor="message" className="block text-gray-900 font-medium mb-2">
               Message (Optional)
             </label>
             <textarea
@@ -199,7 +199,7 @@ export default function UploadForm() {
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-900 font-medium mb-2">
               Upload {activeTab === 'photo' ? 'Photo' : activeTab === 'video' ? 'Video' : 'Audio'}
             </label>
             <div
@@ -229,10 +229,10 @@ export default function UploadForm() {
                 ) : (
                   <>
                     <FiUpload className="text-3xl text-gray-400 mb-2" />
-                    <p className="font-medium text-gray-700">
+                    <p className="font-medium text-gray-900">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-gray-600 mt-1">
                       {activeTab === 'photo'
                         ? 'JPG, PNG, GIF, WEBP'
                         : activeTab === 'video'

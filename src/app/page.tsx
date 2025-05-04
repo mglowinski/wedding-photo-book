@@ -20,7 +20,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden mb-12">
           <div className="p-8 text-center">
             <h3 className="text-2xl font-semibold mb-4">Share Your Memories</h3>
-            <p className="text-lg text-gray-600 mb-6">
+            <p className="text-lg text-gray-800 mb-6">
               Capture and share your favorite moments from our celebration!
             </p>
             
