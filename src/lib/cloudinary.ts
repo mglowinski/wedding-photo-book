@@ -37,7 +37,7 @@ export const uploadToCloudinary = async (file: File, folder: string = 'uploads')
         // Create a FormData object
         const formData = new FormData();
         formData.append('file', `data:${file.type};base64,${base64Data}`);
-        formData.append('upload_preset', 'wedding_guestbook'); // Create this in Cloudinary dashboard
+        formData.append('upload_preset', 'ml_default'); // Using default unsigned preset
         formData.append('folder', folder);
         
         // Upload using the upload preset (no API secret needed in browser)
@@ -50,12 +50,15 @@ export const uploadToCloudinary = async (file: File, folder: string = 'uploads')
         );
         
         if (!uploadResponse.ok) {
-          throw new Error('Upload failed');
+          const errorData = await uploadResponse.text();
+          console.error('Cloudinary error:', errorData);
+          throw new Error(`Upload failed: ${uploadResponse.status} ${errorData}`);
         }
         
         const uploadResult = await uploadResponse.json();
         resolve(uploadResult.secure_url);
       } catch (error) {
+        console.error('Upload error:', error);
         reject(error);
       }
     };
