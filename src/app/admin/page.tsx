@@ -25,6 +25,67 @@ export default function AdminPage() {
           
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
             <div className="p-6">
+              <h2 className="text-xl font-semibold text-black mb-4">Cloudinary Setup (Free Alternative to Firebase Storage)</h2>
+              
+              <div className="space-y-4 text-black">
+                <p>
+                  <span className="bg-yellow-100 px-2 py-1 rounded">Important:</span> Since Firebase Storage requires the Blaze plan, we're now using Cloudinary which has a generous free tier with no credit card required.
+                </p>
+                
+                <ol className="list-decimal pl-5 space-y-3">
+                  <li>
+                    <strong>Sign up for Cloudinary:</strong>
+                    <ul className="list-disc pl-5 mt-1">
+                      <li>Go to <a href="https://cloudinary.com/users/register/free" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Cloudinary Registration</a></li>
+                      <li>Complete the free sign-up process</li>
+                    </ul>
+                  </li>
+                  
+                  <li>
+                    <strong>Get Your Cloudinary Credentials:</strong>
+                    <ul className="list-disc pl-5 mt-1">
+                      <li>After signing in, go to the Dashboard</li>
+                      <li>Copy your Cloud Name, API Key, and API Secret</li>
+                    </ul>
+                  </li>
+                  
+                  <li>
+                    <strong>Create an Upload Preset:</strong>
+                    <ul className="list-disc pl-5 mt-1">
+                      <li>Go to Settings &gt; Upload</li>
+                      <li>Scroll to "Upload presets" and click "Add upload preset"</li>
+                      <li>Set "Upload preset name" to <code className="bg-gray-100 px-1 py-0.5 rounded">wedding_guestbook</code></li>
+                      <li>Set "Signing Mode" to "Unsigned"</li>
+                      <li>Click "Save"</li>
+                    </ul>
+                  </li>
+                  
+                  <li>
+                    <strong>Update Cloudinary Configuration:</strong>
+                    <ul className="list-disc pl-5 mt-1">
+                      <li>Open <code className="bg-gray-100 px-1 py-0.5 rounded">src/lib/cloudinary.ts</code></li>
+                      <li>Replace <code className="bg-gray-100 px-1 py-0.5 rounded">YOUR_CLOUD_NAME</code> with your cloud name (in two places)</li>
+                      <li>Replace <code className="bg-gray-100 px-1 py-0.5 rounded">YOUR_API_KEY</code> with your API key</li>
+                      <li>Replace <code className="bg-gray-100 px-1 py-0.5 rounded">YOUR_API_SECRET</code> with your API secret</li>
+                    </ul>
+                  </li>
+                </ol>
+                
+                <div className="bg-blue-50 p-4 rounded-lg mt-4">
+                  <p className="font-semibold text-blue-800">Free Tier Limits:</p>
+                  <ul className="list-disc pl-5 mt-1 text-blue-800">
+                    <li>25GB storage</li>
+                    <li>25GB monthly bandwidth</li>
+                    <li>25,000 transformations</li>
+                    <li>No credit card required</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
+            <div className="p-6">
               <h2 className="text-xl font-semibold text-black mb-4">Firebase Storage CORS Issues</h2>
               
               <div className="space-y-4 text-black">
@@ -120,15 +181,6 @@ gsutil cors set cors.json gs://wedding-guest-book-e1cf3.firebasestorage.app`}
                       <li>In Firebase Console, go to "Firestore Database"</li>
                       <li>Click "Create database"</li>
                       <li>Choose "Start in test mode" for development</li>
-                    </ul>
-                  </li>
-                  
-                  <li>
-                    <strong>Set up Storage:</strong>
-                    <ul className="list-disc pl-5 mt-1">
-                      <li>Go to "Storage" in Firebase Console</li>
-                      <li>Click "Get started"</li>
-                      <li>Follow the setup wizard</li>
                     </ul>
                   </li>
                 </ol>

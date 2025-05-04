@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { storage, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { FiUpload, FiImage, FiVideo, FiMic, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -71,85 +71,55 @@ export default function UploadForm() {
       setUploading(true);
       setError('');
       
-      // Create a unique file name
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `${activeTab}_${uuidv4()}.${fileExtension}`;
-      const storageRef = ref(storage, `uploads/${fileName}`);
+      // We'll simulate upload progress since Cloudinary doesn't provide it
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          const newProgress = prev + Math.floor(Math.random() * 10);
+          return newProgress > 90 ? 90 : newProgress;
+        });
+      }, 300);
       
-      // Upload file with metadata to help with CORS
-      const metadata = {
-        contentType: file.type,
-        customMetadata: {
-          'uploadedBy': name,
-          'uploadTime': new Date().toISOString(),
-        }
-      };
+      // Upload to Cloudinary
+      const fileURL = await uploadToCloudinary(file, activeTab);
       
-      // Upload file
-      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+      // Set to 100% when upload is complete
+      clearInterval(progressInterval);
+      setUploadProgress(100);
       
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = Math.round(
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-          );
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error('Upload error:', error);
-          
-          // Handle specific errors more elegantly
-          if (error.message.includes('CORS')) {
-            setError('CORS error: The server is blocking this upload. Please check Firebase Storage rules.');
-          } else if (error.message.includes('unauthorized')) {
-            setError('Permission denied: You do not have permission to upload files.');
-          } else {
-            setError('Error uploading file: ' + error.message);
-          }
-          
-          setUploading(false);
-        },
-        async () => {
-          try {
-            // Get download URL
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            
-            // Save to Firestore
-            await addDoc(collection(db, 'media'), {
-              name,
-              message,
-              fileURL: downloadURL,
-              fileName,
-              fileType: activeTab,
-              mimeType: file.type,
-              createdAt: serverTimestamp(),
-            });
-            
-            setSuccess(true);
-          } catch (err) {
-            console.error('Firestore error:', err);
-            setError('Error saving to database: ' + (err as Error).message);
-          } finally {
-            setUploading(false);
-            
-            // Reset form after 2 seconds on success
-            if (success) {
-              setTimeout(() => {
-                setFile(null);
-                setName('');
-                setMessage('');
-                setUploadProgress(0);
-                setSuccess(false);
-                router.push('/');
-              }, 2000);
-            }
-          }
-        }
-      );
+      // Save metadata to Firestore
+      await addDoc(collection(db, 'media'), {
+        name,
+        message,
+        fileURL,
+        fileName: file.name,
+        fileType: activeTab,
+        mimeType: file.type,
+        createdAt: serverTimestamp(),
+      });
+      
+      setSuccess(true);
+      
+      // Reset form after 2 seconds
+      setTimeout(() => {
+        setFile(null);
+        setName('');
+        setMessage('');
+        setUploadProgress(0);
+        setSuccess(false);
+        router.push('/');
+      }, 2000);
+      
     } catch (err) {
-      console.error('General error:', err);
-      setError('Error: ' + (err as Error).message);
+      console.error('Upload error:', err);
+      
+      if ((err as Error).message.includes('upload_preset')) {
+        setError('Cloudinary error: Missing upload preset. Please configure your Cloudinary account.');
+      } else if ((err as Error).message.includes('cloudinary')) {
+        setError('Cloudinary error: Please check your Cloudinary configuration.');
+      } else {
+        setError('Error uploading file: ' + (err as Error).message);
+      }
+    } finally {
       setUploading(false);
     }
   };
