@@ -108,14 +108,34 @@ export async function GET(request: NextRequest) {
       const s3Metadata = await getMetadataFromS3();
       console.log(`Retrieved ${s3Metadata.length} files from S3 metadata`);
       
-      files = s3Metadata.map((file: S3FileMetadata) => ({
-        url: file.url, // This is now a signed URL
-        type: file.type,
-        name: file.name,
-        message: file.message || '',
-        fileName: file.fileName || path.basename(file.url.split('?')[0]), // Remove query params
-        createdAt: file.createdAt
-      }));
+      // Log each file for debugging
+      s3Metadata.forEach((file, index) => {
+        console.log(`File ${index + 1}:`, {
+          url: file.url ? file.url.substring(0, 50) + '...' : 'null',
+          key: file.key || 'missing key',
+          type: file.type || 'unknown type',
+          name: file.name || 'unnamed',
+          fileName: file.fileName || 'no filename'
+        });
+      });
+      
+      files = s3Metadata.map((file: S3FileMetadata) => {
+        const fileInfo = {
+          url: file.url, // This is now a signed URL
+          type: file.type,
+          name: file.name,
+          message: file.message || '',
+          fileName: file.fileName || path.basename(file.url.split('?')[0]), // Remove query params
+          createdAt: file.createdAt
+        };
+        console.log('Mapped file info:', {
+          url: fileInfo.url.substring(0, 50) + '...',
+          type: fileInfo.type,
+          name: fileInfo.name,
+          fileName: fileInfo.fileName
+        });
+        return fileInfo;
+      });
     } else {
       // Scan uploads directory for all files
       const fileUrls = scanDirectory(UPLOAD_DIR);
@@ -147,6 +167,7 @@ export async function GET(request: NextRequest) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     
+    console.log(`Returning ${files.length} files in response`);
     return NextResponse.json({ files });
   } catch (error) {
     console.error('Error getting files:', error);

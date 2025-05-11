@@ -54,6 +54,26 @@ export default function LocalGalleryView() {
         }
         
         const data = await response.json();
+        console.log(`Gallery received ${data.files?.length || 0} files from API`);
+        
+        // Log the first few files for debugging
+        if (data.files && data.files.length > 0) {
+          data.files.slice(0, 5).forEach((file: any, index: number) => {
+            console.log(`Gallery file ${index + 1}:`, {
+              url: file.url ? file.url.substring(0, 50) + '...' : 'null',
+              type: file.type || 'unknown',
+              name: file.name || 'unnamed',
+              fileName: file.fileName || 'no filename'
+            });
+          });
+          
+          if (data.files.length > 5) {
+            console.log(`... and ${data.files.length - 5} more files`);
+          }
+        } else {
+          console.log('No files received from API');
+        }
+        
         setFiles(data.files || []);
       } catch (err) {
         console.error('Error fetching files:', err);

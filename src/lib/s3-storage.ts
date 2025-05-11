@@ -101,6 +101,7 @@ export async function saveMetadataToS3(data: any): Promise<boolean> {
 export async function getMetadataFromS3(): Promise<any[]> {
   try {
     const metadataFile = 'metadata/files.json';
+    console.log(`Attempting to get metadata from S3: ${metadataFile}`);
     
     const getCommand = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
@@ -111,11 +112,13 @@ export async function getMetadataFromS3(): Promise<any[]> {
       const response = await s3Client.send(getCommand);
       const bodyContents = await response.Body?.transformToString();
       if (bodyContents) {
-        return JSON.parse(bodyContents);
+        const metadata = JSON.parse(bodyContents);
+        console.log(`Successfully retrieved metadata with ${metadata.length} entries`);
+        return metadata;
       }
     } catch (error) {
       // If file doesn't exist, return empty array
-      console.log('Metadata file not found, returning empty array');
+      console.log('Metadata file not found, returning empty array:', error);
     }
     
     return [];
@@ -234,8 +237,11 @@ export async function listS3FilesWithSignedUrls(): Promise<any[]> {
  */
 export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
   try {
+    console.log('Starting metadata sync with signed URLs...');
+    
     // Get all files from S3 with signed URLs
     const s3Files = await listS3FilesWithSignedUrls();
+    console.log(`Found ${s3Files.length} files in S3 bucket`);
     
     // Get existing metadata
     const metadataFile = 'metadata/files.json';
@@ -251,6 +257,7 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
       const bodyContents = await response.Body?.transformToString();
       if (bodyContents) {
         metadata = JSON.parse(bodyContents);
+        console.log(`Loaded existing metadata with ${metadata.length} entries`);
       }
     } catch (error) {
       // If metadata file doesn't exist, that's okay
@@ -258,6 +265,9 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
     }
     
     // Update all files with fresh signed URLs
+    let updatedCount = 0;
+    let newCount = 0;
+    
     for (const file of s3Files) {
       const existingIndex = metadata.findIndex((item: any) => 
         item.key === file.key || 
@@ -268,6 +278,7 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
         // Update URL but keep other metadata
         metadata[existingIndex].url = file.url;
         metadata[existingIndex].key = file.key; // Add key if missing
+        updatedCount++;
       } else {
         // Add new file with basic metadata
         metadata.push({
@@ -279,8 +290,22 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
           fileName: file.key.split('/').pop() || '',
           createdAt: file.lastModified || new Date().toISOString()
         });
+        newCount++;
       }
     }
+    
+    console.log(`Metadata sync results: ${updatedCount} updated, ${newCount} new files`);
+    console.log(`Total metadata entries: ${metadata.length}`);
+    
+    // For debugging, log the first few entries
+    metadata.slice(0, 3).forEach((item: any, index: number) => {
+      console.log(`Metadata entry ${index + 1}:`, {
+        key: item.key,
+        type: item.type,
+        name: item.name,
+        url: item.url ? item.url.substring(0, 50) + '...' : 'null'
+      });
+    });
     
     // Save updated metadata
     const putCommand = new PutObjectCommand({
@@ -291,6 +316,7 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
     });
     
     await s3Client.send(putCommand);
+    console.log('Metadata successfully saved to S3');
     return true;
   } catch (error) {
     console.error('Error syncing S3 files with metadata:', error);
