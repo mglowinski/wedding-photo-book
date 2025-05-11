@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
 import { isS3Storage } from '@/lib/storage-config';
-import { getMetadataFromS3, syncS3FilesWithMetadata } from '@/lib/s3-storage';
+import { getMetadataFromS3, syncS3FilesWithMetadataSignedUrls } from '@/lib/s3-storage';
 
 // Path to upload directory - we'll use public folder for easy access
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
@@ -99,18 +99,21 @@ export async function GET(request: NextRequest) {
     
     // If using S3 storage, get files from S3 metadata
     if (isS3Storage() || process.env.VERCEL) {
-      // First, sync S3 files with metadata
-      await syncS3FilesWithMetadata();
+      console.log('Using S3 storage mode with signed URLs');
       
-      // Then fetch the metadata which should now include all files
+      // First, sync S3 files with metadata and get signed URLs
+      await syncS3FilesWithMetadataSignedUrls();
+      
+      // Then fetch the metadata which should now include all files with signed URLs
       const s3Metadata = await getMetadataFromS3();
+      console.log(`Retrieved ${s3Metadata.length} files from S3 metadata`);
       
       files = s3Metadata.map((file: S3FileMetadata) => ({
-        url: file.url,
+        url: file.url, // This is now a signed URL
         type: file.type,
         name: file.name,
         message: file.message || '',
-        fileName: file.fileName || path.basename(file.url),
+        fileName: file.fileName || path.basename(file.url.split('?')[0]), // Remove query params
         createdAt: file.createdAt
       }));
     } else {

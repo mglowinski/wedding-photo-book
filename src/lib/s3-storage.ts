@@ -124,9 +124,34 @@ export async function getMetadataFromS3(): Promise<any[]> {
 }
 
 /**
- * Lists all files in the S3 bucket
+ * Generates a pre-signed URL for viewing an S3 object
+ * This creates temporary access to a private object
  */
-export async function listS3Files(): Promise<any[]> {
+export async function generateViewUrl(key: string): Promise<string> {
+  try {
+    const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
+    
+    // Create the command for getting an object from S3
+    const command = new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    });
+    
+    // Generate a signed URL that's valid for 24 hours (86400 seconds)
+    return await getSignedUrl(s3Client, command, { expiresIn: 86400 });
+  } catch (error) {
+    console.error('Error generating view URL:', error);
+    // Return a direct S3 URL as fallback (might not work if bucket is private)
+    const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
+    const region = process.env.AWS_REGION || 'eu-central-1';
+    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+  }
+}
+
+/**
+ * Lists all files in the S3 bucket with presigned URLs
+ */
+export async function listS3FilesWithSignedUrls(): Promise<any[]> {
   try {
     const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
     const region = process.env.AWS_REGION || 'eu-central-1';
@@ -168,14 +193,14 @@ export async function listS3Files(): Promise<any[]> {
                 type = 'audio';
               }
               
-              // Create URL using the correct pattern for S3
-              const url = `https://${bucket}.s3.${region}.amazonaws.com/${item.Key}`;
+              // Generate a pre-signed URL for viewing the file
+              const signedUrl = await generateViewUrl(item.Key);
               
-              console.log(`Adding file: ${url} (${type})`);
+              console.log(`Adding file: ${signedUrl} (${type})`);
               
               // Create file entry
               files.push({
-                url,
+                url: signedUrl,
                 key: item.Key,
                 type,
                 lastModified: item.LastModified,
@@ -203,13 +228,12 @@ export async function listS3Files(): Promise<any[]> {
 }
 
 /**
- * Ensures that all files in S3 bucket are in the metadata
- * If files are found without metadata, adds basic metadata for them
+ * Ensures that all files in S3 bucket are in the metadata with signed URLs
  */
-export async function syncS3FilesWithMetadata(): Promise<boolean> {
+export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
   try {
-    // Get all files from S3
-    const s3Files = await listS3Files();
+    // Get all files from S3 with signed URLs
+    const s3Files = await listS3FilesWithSignedUrls();
     
     // Get existing metadata
     const metadataFile = 'metadata/files.json';
@@ -231,18 +255,22 @@ export async function syncS3FilesWithMetadata(): Promise<boolean> {
       console.log('Metadata file not found, creating new one');
     }
     
-    // Find files that aren't in metadata
-    const metadataUrls = new Set(metadata.map((item: any) => item.url));
-    const newFiles = s3Files.filter(file => !metadataUrls.has(file.url));
-    
-    // If there are new files, add them to metadata
-    if (newFiles.length > 0) {
-      console.log(`Found ${newFiles.length} files without metadata`);
+    // Update all files with fresh signed URLs
+    for (const file of s3Files) {
+      const existingIndex = metadata.findIndex((item: any) => 
+        item.key === file.key || 
+        (item.url && item.url.includes(file.key.split('/').pop()))
+      );
       
-      // Add basic metadata for each new file
-      for (const file of newFiles) {
+      if (existingIndex >= 0) {
+        // Update URL but keep other metadata
+        metadata[existingIndex].url = file.url;
+        metadata[existingIndex].key = file.key; // Add key if missing
+      } else {
+        // Add new file with basic metadata
         metadata.push({
           url: file.url,
+          key: file.key,
           type: file.type,
           name: 'Unknown',
           message: '',
@@ -250,22 +278,99 @@ export async function syncS3FilesWithMetadata(): Promise<boolean> {
           createdAt: file.lastModified || new Date().toISOString()
         });
       }
-      
-      // Save updated metadata
-      const putCommand = new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
-        Key: metadataFile,
-        Body: JSON.stringify(metadata, null, 2),
-        ContentType: 'application/json',
-      });
-      
-      await s3Client.send(putCommand);
-      return true;
     }
     
+    // Save updated metadata
+    const putCommand = new PutObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+      Key: metadataFile,
+      Body: JSON.stringify(metadata, null, 2),
+      ContentType: 'application/json',
+    });
+    
+    await s3Client.send(putCommand);
     return true;
   } catch (error) {
     console.error('Error syncing S3 files with metadata:', error);
     return false;
+  }
+}
+
+/**
+ * Original function - kept for backward compatibility
+ * Ensures that all files in S3 bucket are in the metadata
+ * If files are found without metadata, adds basic metadata for them
+ */
+export async function syncS3FilesWithMetadata(): Promise<boolean> {
+  return syncS3FilesWithMetadataSignedUrls();
+}
+
+/**
+ * Lists all files in the S3 bucket
+ */
+export async function listS3Files(): Promise<any[]> {
+  try {
+    const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
+    const region = process.env.AWS_REGION || 'eu-central-1';
+    console.log(`Attempting to list files in S3 bucket: ${bucket}, region: ${region}`);
+    
+    const files: any[] = [];
+    let continuationToken: string | undefined = undefined;
+    
+    do {
+      try {
+        const command = new ListObjectsV2Command({
+          Bucket: bucket,
+          ContinuationToken: continuationToken,
+          Prefix: '',
+          MaxKeys: 1000,
+        });
+        
+        const response: ListObjectsV2CommandOutput = await s3Client.send(command);
+        
+        // Process files
+        if (response.Contents) {
+          for (const item of response.Contents) {
+            if (!item.Key) continue;
+            
+            // Skip directories and metadata file
+            if (!item.Key.endsWith('/') && !item.Key.includes('metadata/')) {
+              // Determine file type from path or extension
+              let type = 'other';
+              if (item.Key.startsWith('photo/') || item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                type = 'photo';
+              } else if (item.Key.startsWith('video/') || item.Key.match(/\.(mp4|webm|mov|avi)$/i)) {
+                type = 'video';
+              } else if (item.Key.startsWith('audio/') || item.Key.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+                type = 'audio';
+              }
+              
+              // Create URL using the correct pattern for S3
+              const url = `https://${bucket}.s3.${region}.amazonaws.com/${item.Key}`;
+              
+              // Create file entry
+              files.push({
+                url,
+                key: item.Key,
+                type,
+                lastModified: item.LastModified,
+                size: item.Size
+              });
+            }
+          }
+        }
+        
+        // Check if there are more files
+        continuationToken = response.NextContinuationToken;
+      } catch (err) {
+        console.error('Error during S3 listing operation:', err);
+        break;
+      }
+    } while (continuationToken);
+    
+    return files;
+  } catch (error) {
+    console.error('Error listing S3 files:', error);
+    return [];
   }
 } 
