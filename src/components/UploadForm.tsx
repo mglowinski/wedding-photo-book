@@ -370,10 +370,6 @@ export default function UploadForm() {
           >
             {uploading ? 'Przesyłanie...' : 'Wyślij'}
           </button>
-          
-          <div className="mt-4 text-xs text-gray-500 text-center">
-            Używany magazyn: {storageType === 's3' ? 'AWS S3' : 'Lokalny'}
-          </div>
         </form>
       )}
     </div>

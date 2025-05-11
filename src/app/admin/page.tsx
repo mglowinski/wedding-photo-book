@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import FirebaseTest from '@/components/FirebaseTest';
 import CloudinaryTest from '@/components/CloudinaryTest';
-import StorageToggle from '@/components/StorageToggle';
 
 export default function AdminPage() {
   return (
@@ -17,8 +16,6 @@ export default function AdminPage() {
         
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-black mb-6">Panel administratora</h1>
-          
-          <StorageToggle />
           
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
             <div className="p-6">
@@ -65,8 +62,7 @@ export default function AdminPage() {
                         {`AWS_ACCESS_KEY_ID=twój_klucz_dostępu
 AWS_SECRET_ACCESS_KEY=twój_tajny_klucz
 AWS_REGION=region_bucketa
-AWS_S3_BUCKET_NAME=nazwa_twojego_bucketa
-STORAGE_TYPE=s3`}
+AWS_S3_BUCKET_NAME=nazwa_twojego_bucketa`}
                       </pre>
                     </ul>
                   </li>
