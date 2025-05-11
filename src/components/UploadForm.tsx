@@ -90,7 +90,7 @@ export default function UploadForm() {
       throw new Error('Nie udało się uzyskać URL do przesłania pliku');
     }
     
-    const { uploadUrl, fileUrl } = await urlResponse.json();
+    const { uploadUrl, fileUrl, key } = await urlResponse.json();
     
     // Step 2: Upload file directly to S3 using the presigned URL
     const uploadResponse = await fetch(uploadUrl, {
@@ -111,6 +111,7 @@ export default function UploadForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         url: fileUrl,
+        key: key,
         type: activeTab,
         name,
         message,

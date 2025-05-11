@@ -17,11 +17,12 @@ export async function POST(request: Request) {
     }
     
     // Generate upload URL
-    const { uploadUrl, fileUrl } = await generateUploadUrl(fileType, fileName, folder);
+    const { uploadUrl, fileUrl, key } = await generateUploadUrl(fileType, fileName, folder);
     
     return NextResponse.json({
       uploadUrl,
-      fileUrl
+      fileUrl,
+      key
     });
     
   } catch (error) {

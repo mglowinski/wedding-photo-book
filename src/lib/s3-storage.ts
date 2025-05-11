@@ -14,6 +14,7 @@ const s3Client = new S3Client({
 export interface UploadUrlResult {
   uploadUrl: string;
   fileUrl: string;
+  key: string;
 }
 
 /**
@@ -45,7 +46,8 @@ export async function generateUploadUrl(
   
   return {
     uploadUrl,
-    fileUrl
+    fileUrl,
+    key: uniqueFileName
   };
 }
 
