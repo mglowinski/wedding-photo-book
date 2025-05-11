@@ -235,9 +235,9 @@ export async function listS3FilesWithSignedUrls(): Promise<any[]> {
 /**
  * Ensures that all files in S3 bucket are in the metadata with signed URLs
  */
-export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
+export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = false): Promise<boolean> {
   try {
-    console.log('Starting metadata sync with signed URLs...');
+    console.log(`Starting metadata sync with signed URLs... Force refresh: ${forceRefresh}`);
     
     // Get all files from S3 with signed URLs
     const s3Files = await listS3FilesWithSignedUrls();
@@ -275,10 +275,15 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
       );
       
       if (existingIndex >= 0) {
-        // Update URL but keep other metadata
-        metadata[existingIndex].url = file.url;
-        metadata[existingIndex].key = file.key; // Add key if missing
-        updatedCount++;
+        // If forceRefresh is true, always update URL
+        // Otherwise, only update if URL is missing or expired
+        if (forceRefresh || !metadata[existingIndex].url) {
+          // Update URL but keep other metadata
+          metadata[existingIndex].url = file.url;
+          metadata[existingIndex].key = file.key; // Add key if missing
+          metadata[existingIndex].lastRefreshed = new Date().toISOString();
+          updatedCount++;
+        }
       } else {
         // Add new file with basic metadata
         metadata.push({
@@ -288,7 +293,8 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
           name: 'Unknown',
           message: '',
           fileName: file.key.split('/').pop() || '',
-          createdAt: file.lastModified || new Date().toISOString()
+          createdAt: file.lastModified || new Date().toISOString(),
+          lastRefreshed: new Date().toISOString()
         });
         newCount++;
       }
@@ -303,7 +309,8 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
         key: item.key,
         type: item.type,
         name: item.name,
-        url: item.url ? item.url.substring(0, 50) + '...' : 'null'
+        url: item.url ? item.url.substring(0, 50) + '...' : 'null',
+        lastRefreshed: item.lastRefreshed || 'unknown'
       });
     });
     

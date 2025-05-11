@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiImage, FiVideo, FiMic, FiDownload, FiUser, FiMessageCircle, FiX } from 'react-icons/fi';
+import { FiImage, FiVideo, FiMic, FiDownload, FiUser, FiMessageCircle, FiX, FiRefreshCw } from 'react-icons/fi';
 
 type FileType = 'photo' | 'video' | 'audio' | 'other';
 type Filter = 'all' | FileType;
@@ -21,6 +21,7 @@ export default function LocalGalleryView() {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [modalImage, setModalImage] = useState<LocalFile | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Function to determine file type based on URL
   const determineFileType = (url: string): FileType => {
@@ -40,49 +41,59 @@ export default function LocalGalleryView() {
     return parts[parts.length - 1];
   };
 
+  // Function to fetch files from API
+  const fetchFiles = async (forceRefresh = false) => {
+    try {
+      setLoading(true);
+      if (forceRefresh) {
+        setRefreshing(true);
+      }
+      
+      // Add cache busting parameter and force parameter if needed
+      const cacheBuster = `t=${Date.now()}`;
+      const forceParam = forceRefresh ? 'force=true' : '';
+      const queryParams = [cacheBuster, forceParam].filter(Boolean).join('&');
+      
+      // We'll use fetch to get a list of files from the server
+      const response = await fetch(`/api/local-files?${queryParams}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch files: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`Gallery received ${data.files?.length || 0} files from API`);
+      
+      // Log the first few files for debugging
+      if (data.files && data.files.length > 0) {
+        data.files.slice(0, 5).forEach((file: any, index: number) => {
+          console.log(`Gallery file ${index + 1}:`, {
+            url: file.url ? file.url.substring(0, 50) + '...' : 'null',
+            type: file.type || 'unknown',
+            name: file.name || 'unnamed',
+            fileName: file.fileName || 'no filename'
+          });
+        });
+        
+        if (data.files.length > 5) {
+          console.log(`... and ${data.files.length - 5} more files`);
+        }
+      } else {
+        console.log('No files received from API');
+      }
+      
+      setFiles(data.files || []);
+    } catch (err) {
+      console.error('Error fetching files:', err);
+      setError((err as Error).message || 'Failed to load files');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   // Scan the uploads directory on component mount
   useEffect(() => {
-    const fetchFiles = async () => {
-      try {
-        setLoading(true);
-        
-        // We'll use fetch to get a list of files from the server
-        const response = await fetch('/api/local-files');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch files: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log(`Gallery received ${data.files?.length || 0} files from API`);
-        
-        // Log the first few files for debugging
-        if (data.files && data.files.length > 0) {
-          data.files.slice(0, 5).forEach((file: any, index: number) => {
-            console.log(`Gallery file ${index + 1}:`, {
-              url: file.url ? file.url.substring(0, 50) + '...' : 'null',
-              type: file.type || 'unknown',
-              name: file.name || 'unnamed',
-              fileName: file.fileName || 'no filename'
-            });
-          });
-          
-          if (data.files.length > 5) {
-            console.log(`... and ${data.files.length - 5} more files`);
-          }
-        } else {
-          console.log('No files received from API');
-        }
-        
-        setFiles(data.files || []);
-      } catch (err) {
-        console.error('Error fetching files:', err);
-        setError((err as Error).message || 'Failed to load files');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchFiles();
   }, []);
 
@@ -99,6 +110,11 @@ export default function LocalGalleryView() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Handle refresh button click
+  const handleRefresh = () => {
+    fetchFiles(true);
   };
 
   // Open image in modal
@@ -146,7 +162,7 @@ export default function LocalGalleryView() {
     }
   };
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <div className="text-center py-10">
         <div className="animate-pulse flex flex-col items-center">
@@ -164,7 +180,7 @@ export default function LocalGalleryView() {
       <div className="text-center py-10 text-red-600">
         <p>{error}</p>
         <button 
-          onClick={() => window.location.reload()}
+          onClick={() => fetchFiles(true)}
           className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
         >
           Spróbuj ponownie
@@ -204,6 +220,12 @@ export default function LocalGalleryView() {
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
                   className="w-full h-auto max-h-[70vh] object-contain rounded-md"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.src = '/placeholder-error.png';
+                    console.error('Error loading image:', modalImage.url);
+                  }}
                 />
               </div>
               
@@ -234,6 +256,13 @@ export default function LocalGalleryView() {
                 : 'plików audio'}
         </div>
         <div className="flex space-x-2">
+          <button 
+            onClick={handleRefresh}
+            className={`px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-black flex items-center ${refreshing ? 'opacity-70 cursor-wait' : ''}`}
+            disabled={refreshing}
+          >
+            <FiRefreshCw className={`mr-1 ${refreshing ? 'animate-spin' : ''}`} /> Odśwież
+          </button>
           <button 
             onClick={() => setFilter('all')}
             className={`px-3 py-1 rounded-md ${
@@ -276,6 +305,13 @@ export default function LocalGalleryView() {
           </button>
         </div>
       </div>
+
+      {refreshing && (
+        <div className="text-center py-4 mb-4 bg-gray-50 rounded-md">
+          <FiRefreshCw className="inline-block animate-spin mr-2" />
+          <span>Odświeżanie galerii...</span>
+        </div>
+      )}
 
       {filteredFiles.length === 0 ? (
         <div className="text-center py-10">
@@ -323,6 +359,12 @@ export default function LocalGalleryView() {
                         src={file.url}
                         alt={file.fileName || 'Zdjęcie'}
                         className="object-cover w-full h-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/placeholder-error.png';
+                          console.error('Error loading image:', file.url);
+                        }}
                       />
                       <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity flex items-center justify-center">
                         <span className="text-white font-medium">Zobacz</span>

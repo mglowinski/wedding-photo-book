@@ -96,26 +96,32 @@ interface S3FileMetadata {
 export async function GET(request: NextRequest) {
   try {
     let files = [];
+    const currentTime = new Date().toISOString();
     
     // If using S3 storage, get files from S3 metadata
     if (isS3Storage() || process.env.VERCEL) {
-      console.log('Using S3 storage mode with signed URLs');
+      console.log(`[${currentTime}] Using S3 storage mode with signed URLs`);
       
       // First, sync S3 files with metadata and get signed URLs
-      await syncS3FilesWithMetadataSignedUrls();
+      // Add force=true parameter to explicitly refresh metadata
+      const forcedSync = request.nextUrl.searchParams.get('force') === 'true';
+      console.log(`[${currentTime}] Force sync parameter: ${forcedSync}`);
+      
+      await syncS3FilesWithMetadataSignedUrls(forcedSync);
       
       // Then fetch the metadata which should now include all files with signed URLs
       const s3Metadata = await getMetadataFromS3();
-      console.log(`Retrieved ${s3Metadata.length} files from S3 metadata`);
+      console.log(`[${currentTime}] Retrieved ${s3Metadata.length} files from S3 metadata`);
       
       // Log each file for debugging
       s3Metadata.forEach((file, index) => {
-        console.log(`File ${index + 1}:`, {
+        console.log(`[${currentTime}] File ${index + 1}:`, {
           url: file.url ? file.url.substring(0, 50) + '...' : 'null',
           key: file.key || 'missing key',
           type: file.type || 'unknown type',
           name: file.name || 'unnamed',
-          fileName: file.fileName || 'no filename'
+          fileName: file.fileName || 'no filename',
+          createdAt: file.createdAt || 'no date'
         });
       });
       
@@ -128,7 +134,7 @@ export async function GET(request: NextRequest) {
           fileName: file.fileName || path.basename(file.url.split('?')[0]), // Remove query params
           createdAt: file.createdAt
         };
-        console.log('Mapped file info:', {
+        console.log(`[${currentTime}] Mapped file info:`, {
           url: fileInfo.url.substring(0, 50) + '...',
           type: fileInfo.type,
           name: fileInfo.name,
@@ -139,10 +145,11 @@ export async function GET(request: NextRequest) {
     } else {
       // Scan uploads directory for all files
       const fileUrls = scanDirectory(UPLOAD_DIR);
-      console.log(`Found ${fileUrls.length} files in uploads directory`);
+      console.log(`[${currentTime}] Found ${fileUrls.length} files in uploads directory`);
       
       // Get metadata for all files
       const metadata = readMetadata();
+      console.log(`[${currentTime}] Read metadata with ${metadata.length} entries`);
       
       // Create file objects with metadata
       files = fileUrls.map(url => {
@@ -167,8 +174,15 @@ export async function GET(request: NextRequest) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     
-    console.log(`Returning ${files.length} files in response`);
-    return NextResponse.json({ files });
+    console.log(`[${currentTime}] Returning ${files.length} files in response`);
+    
+    // Return with cache control header to prevent stale data
+    return new NextResponse(JSON.stringify({ files }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, max-age=0'
+      }
+    });
   } catch (error) {
     console.error('Error getting files:', error);
     return NextResponse.json(
