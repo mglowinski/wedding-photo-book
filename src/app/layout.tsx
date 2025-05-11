@@ -2,11 +2,11 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin', 'latin-ext'] });
 
 export const metadata: Metadata = {
-  title: '30th Birthday of Joanna & Maciej',
-  description: 'Digital guestbook for the 30th birthday celebration',
+  title: '30-te Urodziny Joanny i Macieja',
+  description: 'Cyfrowa księga gości na uroczystość 30-tych urodzin',
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="pl">
       <body className={inter.className}>
         <main className="min-h-screen">{children}</main>
       </body>

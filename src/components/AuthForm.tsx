@@ -26,7 +26,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
       if (password === correctPassword) {
         onAuthenticated();
       } else {
-        setError('Incorrect password. Please try again.');
+        setError('Nieprawidłowe hasło. Spróbuj ponownie.');
       }
       setIsLoading(false);
     }, 800);
@@ -38,8 +38,8 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
         <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiLock className="text-3xl text-gray-600" />
         </div>
-        <p className="text-black">
-          This area is password protected. Please enter the password to view the gallery.
+        <p className="text-black mb-6">
+          Ta galeria jest chroniona hasłem. Podaj hasło, aby zobaczyć wspomnienia.
         </p>
       </div>
 
@@ -53,7 +53,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
         
         <div>
           <label htmlFor="password" className="block text-black font-medium mb-2">
-            Password
+            Hasło
           </label>
           <input
             type="password"
@@ -61,7 +61,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
-            placeholder="Enter password"
+            placeholder="Wprowadź hasło"
             required
           />
         </div>
@@ -73,7 +73,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
             isLoading ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary'
           }`}
         >
-          {isLoading ? 'Verifying...' : 'Access Gallery'}
+          {isLoading ? 'Weryfikacja...' : 'Wejdź do galerii'}
         </button>
       </form>
     </div>

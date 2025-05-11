@@ -69,6 +69,20 @@ export default function GalleryView() {
     }
   };
 
+  const determineFileType = (url: string): 'photo' | 'video' | 'audio' => {
+    // Check for known URL patterns
+    if (url.includes('/image/') || url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+      return 'photo';
+    } else if (url.includes('/video/') || url.match(/\.(mp4|webm|mov|avi)$/i)) {
+      return 'video';
+    } else if (url.includes('/audio/') || url.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+      return 'audio';
+    }
+    
+    // Default to photo if we can't determine
+    return 'photo';
+  };
+
   if (loading) {
     return (
       <div className="text-center py-10">
@@ -172,36 +186,34 @@ export default function GalleryView() {
               )}
 
               <div className="mb-4">
-                {item.fileType === 'photo' && (
-                  <div className="relative w-full h-48 bg-gray-100 rounded-md overflow-hidden">
-                    <Image 
+                {item.fileURL && (
+                  item.fileType === 'photo' || determineFileType(item.fileURL) === 'photo' ? (
+                    <div className="relative w-full h-48 bg-gray-100 rounded-md overflow-hidden">
+                      <Image 
+                        src={item.fileURL}
+                        alt={`Photo by ${item.name}`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : item.fileType === 'video' || determineFileType(item.fileURL) === 'video' ? (
+                    <video 
+                      controls 
+                      className="w-full rounded-md"
                       src={item.fileURL}
-                      alt={`Photo by ${item.name}`}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-                
-                {item.fileType === 'video' && (
-                  <video 
-                    controls 
-                    className="w-full rounded-md"
-                    src={item.fileURL}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                )}
-                
-                {item.fileType === 'audio' && (
-                  <audio 
-                    controls 
-                    className="w-full"
-                    src={item.fileURL}
-                  >
-                    Your browser does not support the audio tag.
-                  </audio>
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <audio 
+                      controls 
+                      className="w-full"
+                      src={item.fileURL}
+                    >
+                      Your browser does not support the audio tag.
+                    </audio>
+                  )
                 )}
               </div>
               

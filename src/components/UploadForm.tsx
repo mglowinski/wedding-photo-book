@@ -1,14 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { uploadToCloudinary } from '@/lib/cloudinary';
 import { FiUpload, FiImage, FiVideo, FiMic, FiCheck, FiAlertCircle } from 'react-icons/fi';
-import { v4 as uuidv4 } from 'uuid';
 
 type MediaType = 'photo' | 'video' | 'audio';
+type StorageType = 'local' | 's3';
 
 export default function UploadForm() {
   const router = useRouter();
@@ -20,6 +17,24 @@ export default function UploadForm() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [storageType, setStorageType] = useState<StorageType>('local');
+
+  // Fetch storage type on component mount
+  useEffect(() => {
+    const fetchStorageType = async () => {
+      try {
+        const response = await fetch('/api/storage-config');
+        if (response.ok) {
+          const data = await response.json();
+          setStorageType(data.storageType);
+        }
+      } catch (error) {
+        console.error('Error fetching storage config:', error);
+      }
+    };
+    
+    fetchStorageType();
+  }, []);
 
   const allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
@@ -44,7 +59,7 @@ export default function UploadForm() {
       const allowedTypes = getAllowedTypes();
       
       if (!allowedTypes.includes(selectedFile.type)) {
-        setError(`Invalid file type. Please upload a valid ${activeTab} file.`);
+        setError(`Nieprawidłowy format pliku. Proszę przesłać prawidłowy plik ${activeTab === 'photo' ? 'zdjęcia' : activeTab === 'video' ? 'wideo' : 'audio'}.`);
         setFile(null);
         return;
       }
@@ -54,16 +69,108 @@ export default function UploadForm() {
     }
   };
 
+  const uploadToS3 = async () => {
+    if (!file) {
+      setError('Proszę wybrać plik do przesłania');
+      return false;
+    }
+
+    // Step 1: Get a presigned upload URL from our API
+    const urlResponse = await fetch('/api/generate-upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileType: file.type,
+        fileName: file.name,
+        folder: activeTab
+      })
+    });
+    
+    if (!urlResponse.ok) {
+      throw new Error('Nie udało się uzyskać URL do przesłania pliku');
+    }
+    
+    const { uploadUrl, fileUrl } = await urlResponse.json();
+    
+    // Step 2: Upload file directly to S3 using the presigned URL
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type
+      }
+    });
+    
+    if (!uploadResponse.ok) {
+      throw new Error('Nie udało się przesłać pliku');
+    }
+    
+    // Step 3: Save file metadata to our API
+    const metadataResponse = await fetch('/api/save-file-metadata', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: fileUrl,
+        type: activeTab,
+        name,
+        message,
+        fileName: file.name,
+        createdAt: new Date().toISOString()
+      })
+    });
+    
+    if (!metadataResponse.ok) {
+      throw new Error('Nie udało się zapisać informacji o pliku');
+    }
+    
+    return true;
+  };
+  
+  const uploadToLocal = async () => {
+    if (!file) {
+      setError('Proszę wybrać plik do przesłania');
+      return false;
+    }
+
+    // Upload using the local upload endpoint
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', activeTab);
+    formData.append('name', name);
+    formData.append('message', message);
+    
+    const response = await fetch('/api/local-upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    // Check if the response is successful
+    let result;
+    try {
+      const responseText = await response.text();
+      result = JSON.parse(responseText);
+      
+      if (!response.ok) {
+        throw new Error(result.error || `Przesyłanie nie powiodło się: ${response.status}`);
+      }
+    } catch (parseError) {
+      console.error('Failed to parse response:', parseError);
+      throw new Error('Nie udało się przetworzyć odpowiedzi serwera');
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!file) {
-      setError('Please select a file to upload');
+      setError('Proszę wybrać plik do przesłania');
       return;
     }
     
     if (!name.trim()) {
-      setError('Please enter your name');
+      setError('Proszę podać swoje imię');
       return;
     }
     
@@ -71,7 +178,7 @@ export default function UploadForm() {
       setUploading(true);
       setError('');
       
-      // We'll simulate upload progress since Cloudinary doesn't provide it
+      // We'll simulate upload progress since we don't have real progress events
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           const newProgress = prev + Math.floor(Math.random() * 10);
@@ -79,46 +186,35 @@ export default function UploadForm() {
         });
       }, 300);
       
-      // Upload to Cloudinary
-      const fileURL = await uploadToCloudinary(file, activeTab);
+      // Upload file based on storage type
+      let success = false;
+      if (storageType === 's3') {
+        success = await uploadToS3();
+      } else {
+        success = await uploadToLocal();
+      }
       
       // Set to 100% when upload is complete
       clearInterval(progressInterval);
       setUploadProgress(100);
       
-      // Save metadata to Firestore
-      await addDoc(collection(db, 'media'), {
-        name,
-        message,
-        fileURL,
-        fileName: file.name,
-        fileType: activeTab,
-        mimeType: file.type,
-        createdAt: serverTimestamp(),
-      });
-      
-      setSuccess(true);
-      
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        setFile(null);
-        setName('');
-        setMessage('');
-        setUploadProgress(0);
-        setSuccess(false);
-        router.push('/');
-      }, 2000);
+      if (success) {
+        setSuccess(true);
+        
+        // Reset form after 2 seconds
+        setTimeout(() => {
+          setFile(null);
+          setName('');
+          setMessage('');
+          setUploadProgress(0);
+          setSuccess(false);
+          router.push('/');
+        }, 2000);
+      }
       
     } catch (err) {
       console.error('Upload error:', err);
-      
-      if ((err as Error).message.includes('upload_preset')) {
-        setError('Cloudinary error: Missing upload preset. Please configure your Cloudinary account.');
-      } else if ((err as Error).message.includes('cloudinary')) {
-        setError('Cloudinary error: Please check your Cloudinary configuration.');
-      } else {
-        setError('Error uploading file: ' + (err as Error).message);
-      }
+      setError('Błąd przesyłania pliku: ' + (err as Error).message);
     } finally {
       setUploading(false);
     }
@@ -135,7 +231,7 @@ export default function UploadForm() {
               : 'text-black hover:text-primary'
           }`}
         >
-          <FiImage className="mr-2" /> Photos
+          <FiImage className="mr-2" /> Zdjęcia
         </button>
         <button
           onClick={() => setActiveTab('video')}
@@ -145,7 +241,7 @@ export default function UploadForm() {
               : 'text-black hover:text-primary'
           }`}
         >
-          <FiVideo className="mr-2" /> Videos
+          <FiVideo className="mr-2" /> Wideo
         </button>
         <button
           onClick={() => setActiveTab('audio')}
@@ -162,14 +258,14 @@ export default function UploadForm() {
       {success ? (
         <div className="text-center p-6 bg-green-50 rounded-lg">
           <FiCheck className="mx-auto text-green-500 text-4xl mb-3" />
-          <h3 className="text-xl font-semibold text-green-800">Upload Successful!</h3>
-          <p className="text-green-600 mt-2">Thank you for your contribution.</p>
+          <h3 className="text-xl font-semibold text-green-800">Przesłano pomyślnie!</h3>
+          <p className="text-green-600 mt-2">Dziękujemy za Twój wkład.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="name" className="block text-black font-medium mb-2">
-              Your Name
+              Twoje imię
             </label>
             <input
               type="text"
@@ -177,28 +273,28 @@ export default function UploadForm() {
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
+              placeholder="Wpisz swoje imię"
               required
             />
           </div>
 
           <div className="mb-4">
             <label htmlFor="message" className="block text-black font-medium mb-2">
-              Message (Optional)
+              Wiadomość (opcjonalnie)
             </label>
             <textarea
               id="message"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Add a message or wish"
+              placeholder="Dodaj wiadomość lub życzenia"
               rows={3}
             />
           </div>
 
           <div className="mb-6">
             <label className="block text-black font-medium mb-2">
-              Upload {activeTab === 'photo' ? 'Photo' : activeTab === 'video' ? 'Video' : 'Audio'}
+              Dodaj {activeTab === 'photo' ? 'zdjęcie' : activeTab === 'video' ? 'wideo' : 'audio'}
             </label>
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center ${
@@ -228,7 +324,7 @@ export default function UploadForm() {
                   <>
                     <FiUpload className="text-3xl text-gray-400 mb-2" />
                     <p className="font-medium text-black">
-                      Click to upload or drag and drop
+                      Kliknij, aby przesłać lub przeciągnij i upuść
                     </p>
                     <p className="text-sm text-black mt-1">
                       {activeTab === 'photo'
@@ -259,7 +355,7 @@ export default function UploadForm() {
                 ></div>
               </div>
               <p className="text-sm text-black mt-1 text-center">
-                Uploading... {uploadProgress}%
+                Przesyłanie... {uploadProgress}%
               </p>
             </div>
           )}
@@ -271,8 +367,12 @@ export default function UploadForm() {
               uploading ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary'
             }`}
           >
-            {uploading ? 'Uploading...' : 'Submit'}
+            {uploading ? 'Przesyłanie...' : 'Wyślij'}
           </button>
+          
+          <div className="mt-4 text-xs text-gray-500 text-center">
+            Używany magazyn: {storageType === 's3' ? 'AWS S3' : 'Lokalny'}
+          </div>
         </form>
       )}
     </div>
