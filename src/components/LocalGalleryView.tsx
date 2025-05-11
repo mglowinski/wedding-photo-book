@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiImage, FiVideo, FiMic, FiDownload, FiUser, FiMessageCircle, FiX, FiRefreshCw } from 'react-icons/fi';
+import { FiImage, FiVideo, FiMic, FiDownload, FiUser, FiMessageCircle, FiX, FiRefreshCw, FiAlertTriangle } from 'react-icons/fi';
 
 type FileType = 'photo' | 'video' | 'audio' | 'other';
 type Filter = 'all' | FileType;
@@ -223,7 +223,24 @@ export default function LocalGalleryView() {
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
-                    target.src = '/placeholder-error.png';
+                    target.style.display = 'none';
+                    // Replace with an inline error indicator instead of loading another image
+                    const container = target.parentElement;
+                    if (container) {
+                      const errorDiv = document.createElement('div');
+                      errorDiv.className = 'flex flex-col items-center justify-center bg-gray-100 w-full h-64 rounded-md';
+                      errorDiv.innerHTML = `
+                        <div class="text-red-500 mb-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                          </svg>
+                        </div>
+                        <p class="text-gray-700">Nie można załadować zdjęcia</p>
+                      `;
+                      container.appendChild(errorDiv);
+                    }
                     console.error('Error loading image:', modalImage.url);
                   }}
                 />
@@ -362,7 +379,24 @@ export default function LocalGalleryView() {
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.onerror = null;
-                          target.src = '/placeholder-error.png';
+                          target.style.display = 'none';
+                          // Replace with an inline error indicator
+                          const container = target.parentElement;
+                          if (container) {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'flex flex-col items-center justify-center bg-gray-100 w-full h-full rounded-md';
+                            errorDiv.innerHTML = `
+                              <div class="text-red-500 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle">
+                                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                              </div>
+                              <p class="text-gray-700 text-sm">Błąd obrazu</p>
+                            `;
+                            container.appendChild(errorDiv);
+                          }
                           console.error('Error loading image:', file.url);
                         }}
                       />
