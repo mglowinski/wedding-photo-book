@@ -330,7 +330,81 @@ export async function syncS3FilesWithMetadataSignedUrls(): Promise<boolean> {
  * If files are found without metadata, adds basic metadata for them
  */
 export async function syncS3FilesWithMetadata(): Promise<boolean> {
-  return syncS3FilesWithMetadataSignedUrls();
+  try {
+    console.log('Starting metadata sync...');
+    
+    // Get all files from S3
+    const s3Files = await listS3Files();
+    console.log(`Found ${s3Files.length} files in S3 bucket`);
+    
+    // Get existing metadata
+    const metadataFile = 'metadata/files.json';
+    let metadata = [];
+    
+    try {
+      const getCommand = new GetObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+        Key: metadataFile,
+      });
+      
+      const response = await s3Client.send(getCommand);
+      const bodyContents = await response.Body?.transformToString();
+      if (bodyContents) {
+        metadata = JSON.parse(bodyContents);
+        console.log(`Loaded existing metadata with ${metadata.length} entries`);
+      }
+    } catch (error) {
+      // If metadata file doesn't exist, that's okay
+      console.log('Metadata file not found, creating new one');
+    }
+    
+    // Update metadata with any missing files
+    let updatedCount = 0;
+    let newCount = 0;
+    
+    for (const file of s3Files) {
+      // More robust matching using key or filename
+      const existingIndex = metadata.findIndex((item: any) => 
+        item.key === file.key || 
+        (item.url && item.url.includes(file.key.split('/').pop()))
+      );
+      
+      if (existingIndex >= 0) {
+        // Update URL but keep other metadata
+        metadata[existingIndex].url = file.url;
+        metadata[existingIndex].key = file.key; // Add key if missing
+        updatedCount++;
+      } else {
+        // Add new file with basic metadata
+        metadata.push({
+          url: file.url,
+          key: file.key,
+          type: file.type,
+          name: 'Unknown',
+          message: '',
+          fileName: file.key.split('/').pop() || '',
+          createdAt: file.lastModified || new Date().toISOString()
+        });
+        newCount++;
+      }
+    }
+    
+    console.log(`Metadata sync results: ${updatedCount} updated, ${newCount} new files`);
+    
+    // Save updated metadata
+    const putCommand = new PutObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+      Key: metadataFile,
+      Body: JSON.stringify(metadata, null, 2),
+      ContentType: 'application/json',
+    });
+    
+    await s3Client.send(putCommand);
+    return true;
+  } catch (error) {
+    console.error('Error syncing S3 files with metadata:', error);
+    return false;
+  }
 }
 
 /**
