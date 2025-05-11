@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiImage, FiVideo, FiMic, FiDownload, FiUser, FiMessageCircle, FiX, FiRefreshCw, FiAlertTriangle } from 'react-icons/fi';
+import { FiImage, FiVideo, FiMic, FiDownload, FiUser, FiMessageCircle, FiX, FiRefreshCw, FiAlertTriangle, FiTrash2 } from 'react-icons/fi';
 
 type FileType = 'photo' | 'video' | 'audio' | 'other';
 type Filter = 'all' | FileType;
@@ -13,6 +13,8 @@ interface LocalFile {
   message?: string;
   fileName?: string;
   createdAt?: string;
+  key?: string;
+  id?: string;
 }
 
 export default function LocalGalleryView() {
@@ -22,6 +24,8 @@ export default function LocalGalleryView() {
   const [filter, setFilter] = useState<Filter>('all');
   const [modalImage, setModalImage] = useState<LocalFile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<LocalFile | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Function to determine file type based on URL
   const determineFileType = (url: string): FileType => {
@@ -117,6 +121,66 @@ export default function LocalGalleryView() {
     fetchFiles(true);
   };
 
+  // Open delete confirmation dialog
+  const openDeleteConfirm = (file: LocalFile) => {
+    setDeleteConfirm(file);
+  };
+
+  // Close delete confirmation dialog
+  const closeDeleteConfirm = () => {
+    setDeleteConfirm(null);
+  };
+
+  // Handle file deletion
+  const handleDeleteFile = async (file: LocalFile) => {
+    if (!file) return;
+    
+    try {
+      setDeleting(true);
+      
+      // Build query parameters for deletion
+      const params = new URLSearchParams();
+      if (file.key) params.append('key', file.key);
+      if (file.id) params.append('id', file.id);
+      if (file.url) params.append('url', file.url);
+      
+      // Call the delete API endpoint
+      const response = await fetch(`/api/delete-file?${params.toString()}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete file');
+      }
+      
+      // Remove the file from the local state
+      setFiles(prevFiles => prevFiles.filter(f => 
+        f.url !== file.url && 
+        (f.key !== file.key || !file.key) && 
+        (f.id !== file.id || !file.id)
+      ));
+      
+      // Close the confirmation dialog
+      closeDeleteConfirm();
+      
+      // Also close the modal if the deleted file is currently shown
+      if (modalImage && (
+        modalImage.url === file.url || 
+        (modalImage.key === file.key && file.key) ||
+        (modalImage.id === file.id && file.id)
+      )) {
+        closeImageModal();
+      }
+      
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      alert(`Błąd usuwania pliku: ${(error as Error).message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Open image in modal
   const openImageModal = (file: LocalFile) => {
     setModalImage(file);
@@ -136,6 +200,8 @@ export default function LocalGalleryView() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && modalImage) {
         closeImageModal();
+      } else if (e.key === 'Escape' && deleteConfirm) {
+        closeDeleteConfirm();
       }
     };
 
@@ -143,7 +209,7 @@ export default function LocalGalleryView() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [modalImage]);
+  }, [modalImage, deleteConfirm]);
 
   // Format date
   const formatDate = (dateString?: string) => {
@@ -191,6 +257,40 @@ export default function LocalGalleryView() {
 
   return (
     <div>
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={closeDeleteConfirm}>
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-semibold mb-4">Potwierdź usunięcie</h3>
+            <p className="mb-6">
+              Czy na pewno chcesz usunąć plik <strong>{deleteConfirm.fileName || 'wybrany'}</strong>? Tej operacji nie można cofnąć.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={closeDeleteConfirm}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                disabled={deleting}
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={() => handleDeleteFile(deleteConfirm)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+                disabled={deleting}
+              >
+                {deleting && (
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                Usuń
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Image Modal */}
       {modalImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" onClick={closeImageModal}>
@@ -250,12 +350,23 @@ export default function LocalGalleryView() {
                 <div className="text-sm text-gray-500">
                   {formatDate(modalImage.createdAt)}
                 </div>
-                <button
-                  onClick={() => handleDownload(modalImage.url, modalImage.fileName || '')}
-                  className="flex items-center text-primary hover:text-primary/80"
-                >
-                  <FiDownload className="mr-1" /> Pobierz
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => handleDownload(modalImage.url, modalImage.fileName || '')}
+                    className="flex items-center text-primary hover:text-primary/80"
+                  >
+                    <FiDownload className="mr-1" /> Pobierz
+                  </button>
+                  <button
+                    onClick={() => {
+                      closeImageModal();
+                      openDeleteConfirm(modalImage);
+                    }}
+                    className="flex items-center text-red-600 hover:text-red-700"
+                  >
+                    <FiTrash2 className="mr-1" /> Usuń
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -348,15 +459,24 @@ export default function LocalGalleryView() {
                     <FiUser className="text-gray-400 mr-1.5" />
                     <h4 className="font-medium text-black">{file.name}</h4>
                   </div>
-                  <span className="text-xs bg-gray-100 text-black px-2 py-1 rounded-full">
-                    {file.type === 'photo' 
-                      ? 'zdjęcie' 
-                      : file.type === 'video' 
-                        ? 'wideo' 
-                        : file.type === 'audio' 
-                          ? 'audio' 
-                          : file.type}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs bg-gray-100 text-black px-2 py-1 rounded-full">
+                      {file.type === 'photo' 
+                        ? 'zdjęcie' 
+                        : file.type === 'video' 
+                          ? 'wideo' 
+                          : file.type === 'audio' 
+                            ? 'audio' 
+                            : file.type}
+                    </span>
+                    <button 
+                      onClick={() => openDeleteConfirm(file)}
+                      className="text-red-500 hover:text-red-700 p-1"
+                      title="Usuń plik"
+                    >
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 {file.message && (

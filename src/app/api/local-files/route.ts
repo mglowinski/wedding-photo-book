@@ -88,6 +88,7 @@ interface S3FileMetadata {
   url: string;
   type: string;
   name: string;
+  key?: string;
   message?: string;
   fileName?: string;
   createdAt?: string;
@@ -128,6 +129,7 @@ export async function GET(request: NextRequest) {
       files = s3Metadata.map((file: S3FileMetadata) => {
         const fileInfo = {
           url: file.url, // This is now a signed URL
+          key: file.key, // Include the S3 key for deletion
           type: file.type,
           name: file.name,
           message: file.message || '',
@@ -136,6 +138,7 @@ export async function GET(request: NextRequest) {
         };
         console.log(`[${currentTime}] Mapped file info:`, {
           url: fileInfo.url.substring(0, 50) + '...',
+          key: fileInfo.key,
           type: fileInfo.type,
           name: fileInfo.name,
           fileName: fileInfo.fileName
@@ -158,6 +161,7 @@ export async function GET(request: NextRequest) {
         
         return {
           url,
+          id: fileMetadata?.id, // Include the ID for deletion
           name: fileMetadata?.name || 'Unknown',
           message: fileMetadata?.message || '',
           fileName: fileMetadata?.fileName || path.basename(url),
