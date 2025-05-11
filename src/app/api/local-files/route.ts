@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
 import { isS3Storage } from '@/lib/storage-config';
-import { getMetadataFromS3 } from '@/lib/s3-storage';
+import { getMetadataFromS3, syncS3FilesWithMetadata } from '@/lib/s3-storage';
 
 // Path to upload directory - we'll use public folder for easy access
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
@@ -99,7 +99,10 @@ export async function GET(request: NextRequest) {
     
     // If using S3 storage, get files from S3 metadata
     if (isS3Storage() || process.env.VERCEL) {
-      // In production or when S3 is explicitly enabled, use S3 metadata directly from S3
+      // First, sync S3 files with metadata
+      await syncS3FilesWithMetadata();
+      
+      // Then fetch the metadata which should now include all files
       const s3Metadata = await getMetadataFromS3();
       
       files = s3Metadata.map((file: S3FileMetadata) => ({
