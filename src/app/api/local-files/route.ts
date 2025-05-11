@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
 import { isS3Storage } from '@/lib/storage-config';
+import { getMetadataFromS3 } from '@/lib/s3-storage';
 
 // Path to upload directory - we'll use public folder for easy access
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
@@ -36,17 +37,8 @@ function readMetadata(): MediaItem[] {
   }
 }
 
-// Read S3 file metadata
-interface S3FileMetadata {
-  url: string;
-  type: string;
-  name: string;
-  message?: string;
-  fileName?: string;
-  createdAt?: string;
-}
-
-function readS3Metadata(): S3FileMetadata[] {
+// Read S3 file metadata from local file
+function readS3MetadataLocal(): S3FileMetadata[] {
   try {
     if (!fs.existsSync(S3_FILES_PATH)) {
       return [];
@@ -54,7 +46,7 @@ function readS3Metadata(): S3FileMetadata[] {
     const data = fs.readFileSync(S3_FILES_PATH, 'utf8');
     return JSON.parse(data);
   } catch (error) {
-    console.error('Error reading S3 metadata:', error);
+    console.error('Error reading S3 metadata from local file:', error);
     return [];
   }
 }
@@ -91,13 +83,25 @@ function scanDirectory(dir: string, baseDir: string = ''): string[] {
   return files;
 }
 
+// Interface for S3 file metadata
+interface S3FileMetadata {
+  url: string;
+  type: string;
+  name: string;
+  message?: string;
+  fileName?: string;
+  createdAt?: string;
+}
+
 export async function GET(request: NextRequest) {
   try {
     let files = [];
     
     // If using S3 storage, get files from S3 metadata
-    if (isS3Storage()) {
-      const s3Metadata = readS3Metadata();
+    if (isS3Storage() || process.env.VERCEL) {
+      // In production or when S3 is explicitly enabled, use S3 metadata directly from S3
+      const s3Metadata = await getMetadataFromS3();
+      
       files = s3Metadata.map((file: S3FileMetadata) => ({
         url: file.url,
         type: file.type,
