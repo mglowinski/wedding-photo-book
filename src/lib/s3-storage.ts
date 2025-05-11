@@ -129,51 +129,72 @@ export async function getMetadataFromS3(): Promise<any[]> {
 export async function listS3Files(): Promise<any[]> {
   try {
     const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
+    const region = process.env.AWS_REGION || 'eu-central-1';
+    console.log(`Attempting to list files in S3 bucket: ${bucket}, region: ${region}`);
+    
     const files: any[] = [];
     let continuationToken: string | undefined = undefined;
     
     do {
-      const command = new ListObjectsV2Command({
-        Bucket: bucket,
-        ContinuationToken: continuationToken,
-        // Skip metadata directory
-        Prefix: '',
-        MaxKeys: 1000,
-      });
-      
-      const response: ListObjectsV2CommandOutput = await s3Client.send(command);
-      
-      // Process files
-      if (response.Contents) {
-        for (const item of response.Contents) {
-          // Skip directories and metadata file
-          if (item.Key && !item.Key.endsWith('/') && !item.Key.includes('metadata/')) {
-            // Determine file type from path or extension
-            let type = 'other';
-            if (item.Key.startsWith('photo/') || item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-              type = 'photo';
-            } else if (item.Key.startsWith('video/') || item.Key.match(/\.(mp4|webm|mov|avi)$/i)) {
-              type = 'video';
-            } else if (item.Key.startsWith('audio/') || item.Key.match(/\.(mp3|wav|ogg|m4a)$/i)) {
-              type = 'audio';
-            }
+      try {
+        const command = new ListObjectsV2Command({
+          Bucket: bucket,
+          ContinuationToken: continuationToken,
+          // Skip metadata directory, but don't filter too much yet
+          Prefix: '',
+          MaxKeys: 1000,
+        });
+        
+        console.log('Sending ListObjectsV2Command...');
+        const response: ListObjectsV2CommandOutput = await s3Client.send(command);
+        console.log(`Got response with ${response.Contents?.length || 0} items`);
+        
+        // Process files
+        if (response.Contents) {
+          for (const item of response.Contents) {
+            if (!item.Key) continue;
             
-            // Create file entry
-            files.push({
-              url: `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`,
-              key: item.Key,
-              type: type,
-              lastModified: item.LastModified,
-              size: item.Size
-            });
+            console.log(`Processing item: ${item.Key}`);
+            
+            // Skip directories and metadata file
+            if (!item.Key.endsWith('/') && !item.Key.includes('metadata/')) {
+              // Determine file type from path or extension
+              let type = 'other';
+              if (item.Key.startsWith('photo/') || item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                type = 'photo';
+              } else if (item.Key.startsWith('video/') || item.Key.match(/\.(mp4|webm|mov|avi)$/i)) {
+                type = 'video';
+              } else if (item.Key.startsWith('audio/') || item.Key.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+                type = 'audio';
+              }
+              
+              // Create URL using the correct pattern for S3
+              const url = `https://${bucket}.s3.${region}.amazonaws.com/${item.Key}`;
+              
+              console.log(`Adding file: ${url} (${type})`);
+              
+              // Create file entry
+              files.push({
+                url,
+                key: item.Key,
+                type,
+                lastModified: item.LastModified,
+                size: item.Size
+              });
+            }
           }
         }
+        
+        // Check if there are more files
+        continuationToken = response.NextContinuationToken;
+      } catch (err) {
+        console.error('Error during S3 listing operation:', err);
+        // Break the loop but continue with any files we found
+        break;
       }
-      
-      // Check if there are more files
-      continuationToken = response.NextContinuationToken;
     } while (continuationToken);
     
+    console.log(`Total files found in S3: ${files.length}`);
     return files;
   } catch (error) {
     console.error('Error listing S3 files:', error);
