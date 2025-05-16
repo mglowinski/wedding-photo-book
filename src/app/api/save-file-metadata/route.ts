@@ -24,8 +24,13 @@ export async function POST(request: Request) {
     const fileData = await request.json();
     
     // Validate required fields
-    if (!fileData.url || !fileData.type || !fileData.name) {
+    if (!fileData.url || !fileData.type) {
       return NextResponse.json({ error: 'Brakuje wymaganych pól' }, { status: 400 });
+    }
+    
+    // Set default name if none provided
+    if (!fileData.name || fileData.name.trim() === '') {
+      fileData.name = 'Anonim';
     }
     
     // Extract S3 key from the URL if using S3

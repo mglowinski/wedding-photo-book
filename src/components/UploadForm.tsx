@@ -170,11 +170,6 @@ export default function UploadForm() {
       return;
     }
     
-    if (!name.trim()) {
-      setError('Proszę podać swoje imię');
-      return;
-    }
-    
     try {
       setUploading(true);
       setError('');
@@ -266,7 +261,7 @@ export default function UploadForm() {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="name" className="block text-black font-medium mb-2 text-sm sm:text-base">
-              Twoje imię
+              Twoje imię (opcjonalnie)
             </label>
             <input
               type="text"
@@ -275,7 +270,6 @@ export default function UploadForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Wpisz swoje imię"
-              required
             />
           </div>
 
