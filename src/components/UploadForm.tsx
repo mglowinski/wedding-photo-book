@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiUpload, FiImage, FiVideo, FiMic, FiCheck, FiAlertCircle, FiX } from 'react-icons/fi';
 
@@ -17,6 +17,7 @@ interface FileWithPreview extends File {
 
 export default function UploadForm() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<MediaType>('photo');
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [name, setName] = useState('');
@@ -70,6 +71,25 @@ export default function UploadForm() {
     }
   };
 
+  const handleTabChange = (newTab: MediaType) => {
+    if (activeTab !== newTab) {
+      // Reset files when changing tabs
+      files.forEach(file => {
+        if (file.preview) URL.revokeObjectURL(file.preview);
+      });
+      setFiles([]);
+      setError('');
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      // Set new active tab
+      setActiveTab(newTab);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const allowedTypes = getAllowedTypes();
@@ -103,6 +123,12 @@ export default function UploadForm() {
       if (fileToRemove?.preview) {
         URL.revokeObjectURL(fileToRemove.preview);
       }
+      
+      // Reset the file input value to allow selecting the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
       return prev.filter(f => f.id !== id);
     });
   };
@@ -363,7 +389,7 @@ export default function UploadForm() {
     <div>
       <div className="flex flex-wrap border-b mb-6">
         <button
-          onClick={() => setActiveTab('photo')}
+          onClick={() => handleTabChange('photo')}
           className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
             activeTab === 'photo'
               ? 'text-primary border-b-2 border-primary'
@@ -373,7 +399,7 @@ export default function UploadForm() {
           <FiImage className="mr-1 sm:mr-2" /> Zdjęcia
         </button>
         <button
-          onClick={() => setActiveTab('video')}
+          onClick={() => handleTabChange('video')}
           className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
             activeTab === 'video'
               ? 'text-primary border-b-2 border-primary'
@@ -383,7 +409,7 @@ export default function UploadForm() {
           <FiVideo className="mr-1 sm:mr-2" /> Wideo
         </button>
         <button
-          onClick={() => setActiveTab('audio')}
+          onClick={() => handleTabChange('audio')}
           className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
             activeTab === 'audio'
               ? 'text-primary border-b-2 border-primary'
@@ -442,6 +468,7 @@ export default function UploadForm() {
               <input
                 type="file"
                 id="file"
+                ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
                 accept={getAllowedTypes().join(',')}
