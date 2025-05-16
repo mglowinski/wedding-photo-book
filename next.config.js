@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['firebasestorage.googleapis.com', 'res.cloudinary.com'],
+    domains: [],
   },
   webpack: (config) => {
     // This is to handle the 'fs' module error

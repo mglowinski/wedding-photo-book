@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c4ce5281-a918-4f80-bf22-da36af85d170" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/gallery/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/gallery/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/AuthForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/AuthForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/GalleryView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/GalleryView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/UploadForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/UploadForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib/cloudinary.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib/cloudinary.ts" afterDir="false" />
-    </list>
+    <list default="true" id="c4ce5281-a918-4f80-bf22-da36af85d170" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
