@@ -223,55 +223,55 @@ export default function UploadForm() {
 
   return (
     <div>
-      <div className="flex border-b mb-6">
+      <div className="flex flex-wrap border-b mb-6">
         <button
           onClick={() => setActiveTab('photo')}
-          className={`flex items-center justify-center py-3 px-4 font-medium ${
+          className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
             activeTab === 'photo'
               ? 'text-primary border-b-2 border-primary'
               : 'text-black hover:text-primary'
           }`}
         >
-          <FiImage className="mr-2" /> Zdjęcia
+          <FiImage className="mr-1 sm:mr-2" /> Zdjęcia
         </button>
         <button
           onClick={() => setActiveTab('video')}
-          className={`flex items-center justify-center py-3 px-4 font-medium ${
+          className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
             activeTab === 'video'
               ? 'text-primary border-b-2 border-primary'
               : 'text-black hover:text-primary'
           }`}
         >
-          <FiVideo className="mr-2" /> Wideo
+          <FiVideo className="mr-1 sm:mr-2" /> Wideo
         </button>
         <button
           onClick={() => setActiveTab('audio')}
-          className={`flex items-center justify-center py-3 px-4 font-medium ${
+          className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
             activeTab === 'audio'
               ? 'text-primary border-b-2 border-primary'
               : 'text-black hover:text-primary'
           }`}
         >
-          <FiMic className="mr-2" /> Audio
+          <FiMic className="mr-1 sm:mr-2" /> Audio
         </button>
       </div>
 
       {success ? (
-        <div className="text-center p-6 bg-green-50 rounded-lg">
-          <FiCheck className="mx-auto text-green-500 text-4xl mb-3" />
-          <h3 className="text-xl font-semibold text-green-800">Przesłano pomyślnie!</h3>
-          <p className="text-green-600 mt-2">Dziękujemy za Twój wkład.</p>
+        <div className="text-center p-4 sm:p-6 bg-green-50 rounded-lg">
+          <FiCheck className="mx-auto text-green-500 text-3xl mb-2 sm:mb-3" />
+          <h3 className="text-lg sm:text-xl font-semibold text-green-800">Przesłano pomyślnie!</h3>
+          <p className="text-sm sm:text-base text-green-600 mt-1 sm:mt-2">Dziękujemy za Twój wkład.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="name" className="block text-black font-medium mb-2">
+            <label htmlFor="name" className="block text-black font-medium mb-2 text-sm sm:text-base">
               Twoje imię
             </label>
             <input
               type="text"
               id="name"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
+              className="w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black text-sm sm:text-base"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Wpisz swoje imię"
@@ -280,12 +280,12 @@ export default function UploadForm() {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="message" className="block text-black font-medium mb-2">
+            <label htmlFor="message" className="block text-black font-medium mb-2 text-sm sm:text-base">
               Wiadomość (opcjonalnie)
             </label>
             <textarea
               id="message"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
+              className="w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black text-sm sm:text-base"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Dodaj wiadomość lub życzenia"
@@ -298,7 +298,7 @@ export default function UploadForm() {
               Dodaj {activeTab === 'photo' ? 'zdjęcie' : activeTab === 'video' ? 'wideo' : 'audio'}
             </label>
             <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center ${
+              className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center ${
                 file ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary'
               }`}
             >
@@ -316,18 +316,18 @@ export default function UploadForm() {
                 {file ? (
                   <>
                     <FiCheck className="text-3xl text-green-500 mb-2" />
-                    <p className="font-medium text-green-700">{file.name}</p>
+                    <p className="font-medium text-green-700 break-all">{file.name}</p>
                     <p className="text-sm text-green-600 mt-1">
                       {(file.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
                   </>
                 ) : (
                   <>
-                    <FiUpload className="text-3xl text-gray-400 mb-2" />
-                    <p className="font-medium text-black">
+                    <FiUpload className="text-2xl sm:text-3xl text-gray-400 mb-2" />
+                    <p className="font-medium text-black text-sm sm:text-base">
                       Kliknij, aby przesłać lub przeciągnij i upuść
                     </p>
-                    <p className="text-sm text-black mt-1">
+                    <p className="text-xs sm:text-sm text-black mt-1">
                       {activeTab === 'photo'
                         ? 'JPG, PNG, GIF, WEBP'
                         : activeTab === 'video'
@@ -341,9 +341,9 @@ export default function UploadForm() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg flex items-start">
+            <div className="mb-4 p-2 sm:p-3 bg-red-50 text-red-700 rounded-lg flex items-start">
               <FiAlertCircle className="text-red-500 mt-1 mr-2 flex-shrink-0" />
-              <p>{error}</p>
+              <p className="text-sm sm:text-base">{error}</p>
             </div>
           )}
 
@@ -355,7 +355,7 @@ export default function UploadForm() {
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
-              <p className="text-sm text-black mt-1 text-center">
+              <p className="text-xs sm:text-sm text-black mt-1 text-center">
                 Przesyłanie... {uploadProgress}%
               </p>
             </div>
@@ -364,7 +364,7 @@ export default function UploadForm() {
           <button
             type="submit"
             disabled={uploading}
-            className={`w-full py-3 btn ${
+            className={`w-full py-2 sm:py-3 btn text-sm sm:text-base ${
               uploading ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary'
             }`}
           >

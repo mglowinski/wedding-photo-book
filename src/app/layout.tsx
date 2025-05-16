@@ -7,6 +7,11 @@ const inter = Inter({ subsets: ['latin', 'latin-ext'] });
 export const metadata: Metadata = {
   title: '30-te Urodziny Joanny i Macieja',
   description: 'Cyfrowa księga gości na uroczystość 30-tych urodzin',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
 };
 
 export default function RootLayout({
