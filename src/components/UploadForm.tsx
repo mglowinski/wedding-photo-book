@@ -23,7 +23,6 @@ export default function UploadForm() {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [storageType, setStorageType] = useState<StorageType>('local');
@@ -58,19 +57,6 @@ export default function UploadForm() {
   const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
   const allowedAudioTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg'];
 
-  const getAllowedTypes = () => {
-    switch (activeTab) {
-      case 'photo':
-        return allowedPhotoTypes;
-      case 'video':
-        return allowedVideoTypes;
-      case 'audio':
-        return allowedAudioTypes;
-      default:
-        return [];
-    }
-  };
-
   const handleTabChange = (newTab: MediaType) => {
     if (activeTab !== newTab) {
       // Reset files when changing tabs
@@ -87,6 +73,19 @@ export default function UploadForm() {
       
       // Set new active tab
       setActiveTab(newTab);
+    }
+  };
+
+  const getAllowedTypes = () => {
+    switch (activeTab) {
+      case 'photo':
+        return allowedPhotoTypes;
+      case 'video':
+        return allowedVideoTypes;
+      case 'audio':
+        return allowedAudioTypes;
+      default:
+        return [];
     }
   };
 
@@ -221,10 +220,6 @@ export default function UploadForm() {
         setFiles([...updatedFiles]);
         
         completedUploads++;
-        
-        // Update overall progress
-        setUploadProgress(Math.floor((completedUploads + failedUploads) * 100 / validFiles.length));
-        
         return true;
       } catch (error) {
         console.error(`Error uploading file ${file.name}:`, error);
@@ -235,10 +230,6 @@ export default function UploadForm() {
         setFiles([...updatedFiles]);
         
         failedUploads++;
-        
-        // Update overall progress even for failed uploads
-        setUploadProgress(Math.floor((completedUploads + failedUploads) * 100 / validFiles.length));
-        
         return false;
       }
     });
@@ -309,10 +300,6 @@ export default function UploadForm() {
           setFiles([...updatedFiles]);
           
           completedUploads++;
-          
-          // Update overall progress
-          setUploadProgress(Math.floor((completedUploads + failedUploads) * 100 / validFiles.length));
-          
           return true;
         } catch (parseError) {
           console.error('Failed to parse response:', parseError);
@@ -327,10 +314,6 @@ export default function UploadForm() {
         setFiles([...updatedFiles]);
         
         failedUploads++;
-        
-        // Update overall progress even for failed uploads
-        setUploadProgress(Math.floor((completedUploads + failedUploads) * 100 / validFiles.length));
-        
         return false;
       }
     });
@@ -353,7 +336,6 @@ export default function UploadForm() {
     try {
       setUploading(true);
       setError('');
-      setUploadProgress(0);
       
       // Upload files based on storage type
       let success = false;
@@ -371,7 +353,6 @@ export default function UploadForm() {
           setFiles([]);
           setName('');
           setMessage('');
-          setUploadProgress(0);
           setSuccess(false);
           router.push('/');
         }, 2000);
@@ -576,20 +557,6 @@ export default function UploadForm() {
             <div className="mb-4 p-2 sm:p-3 bg-red-50 text-red-700 rounded-lg flex items-start">
               <FiAlertCircle className="text-red-500 mt-1 mr-2 flex-shrink-0" />
               <p className="text-sm sm:text-base">{error}</p>
-            </div>
-          )}
-
-          {uploading && (
-            <div className="mb-4">
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-primary h-2.5 rounded-full"
-                  style={{ width: `${uploadProgress}%` }}
-                ></div>
-              </div>
-              <p className="text-xs sm:text-sm text-black mt-1 text-center">
-                Przesyłanie... {uploadProgress}%
-              </p>
             </div>
           )}
 
