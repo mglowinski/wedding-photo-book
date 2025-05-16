@@ -267,6 +267,7 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
     // Update all files with fresh signed URLs
     let updatedCount = 0;
     let newCount = 0;
+    const now = new Date().getTime();
     
     for (const file of s3Files) {
       const existingIndex = metadata.findIndex((item: any) => 
@@ -275,9 +276,21 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
       );
       
       if (existingIndex >= 0) {
-        // If forceRefresh is true, always update URL
-        // Otherwise, only update if URL is missing or expired
-        if (forceRefresh || !metadata[existingIndex].url) {
+        // Calculate time since last refresh (if available)
+        let shouldRefresh = forceRefresh;
+        if (!shouldRefresh && metadata[existingIndex].lastRefreshed) {
+          const lastRefreshTime = new Date(metadata[existingIndex].lastRefreshed).getTime();
+          const hoursSinceRefresh = (now - lastRefreshTime) / (1000 * 60 * 60);
+          // Refresh if URL is more than 12 hours old (URLs expire after 24 hours)
+          shouldRefresh = hoursSinceRefresh > 12;
+          
+          if (shouldRefresh) {
+            console.log(`URL for ${file.key} is ${hoursSinceRefresh.toFixed(1)} hours old, refreshing`);
+          }
+        }
+        
+        // If forceRefresh is true or URL is missing/expiring soon, update
+        if (shouldRefresh || !metadata[existingIndex].url) {
           // Update URL but keep other metadata
           metadata[existingIndex].url = file.url;
           metadata[existingIndex].key = file.key; // Add key if missing

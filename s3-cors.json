@@ -1,8 +1,25 @@
 [
   {
-    "AllowedHeaders": ["*"],
-    "AllowedMethods": ["GET", "PUT", "POST", "HEAD", "DELETE"],
-    "AllowedOrigins": ["*"],
-    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"]
+    "AllowedHeaders": [
+      "*"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "PUT",
+      "POST",
+      "DELETE",
+      "HEAD"
+    ],
+    "AllowedOrigins": [
+      "https://wedding-photo-book.vercel.app",
+      "http://localhost:3000"
+    ],
+    "ExposeHeaders": [
+      "ETag",
+      "Content-Length",
+      "Content-Type",
+      "Content-Disposition"
+    ],
+    "MaxAgeSeconds": 3600
   }
 ] 
