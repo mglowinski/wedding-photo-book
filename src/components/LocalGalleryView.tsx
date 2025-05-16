@@ -128,11 +128,6 @@ export default function LocalGalleryView() {
     document.body.removeChild(link);
   };
 
-  // Handle refresh button click
-  const handleRefresh = () => {
-    fetchFiles(true);
-  };
-
   // Open delete confirmation dialog
   const openDeleteConfirm = (file: LocalFile) => {
     setDeleteConfirm(file);
@@ -398,13 +393,6 @@ export default function LocalGalleryView() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button 
-            onClick={handleRefresh}
-            className={`px-2 sm:px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-black flex items-center text-xs sm:text-sm ${refreshing ? 'opacity-70 cursor-wait' : ''}`}
-            disabled={refreshing}
-          >
-            <FiRefreshCw className={`mr-1 ${refreshing ? 'animate-spin' : ''}`} /> Odśwież
-          </button>
-          <button 
             onClick={() => setFilter('all')}
             className={`px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm ${
               filter === 'all' 
@@ -448,9 +436,9 @@ export default function LocalGalleryView() {
       </div>
 
       {refreshing && (
-        <div className="text-center py-3 sm:py-4 mb-3 sm:mb-4 bg-gray-50 rounded-md">
+        <div className="text-center py-2 mb-3 sm:mb-4 text-primary rounded-md text-xs sm:text-sm flex items-center justify-center">
           <FiRefreshCw className="inline-block animate-spin mr-2" />
-          <span className="text-sm sm:text-base">Odświeżanie galerii...</span>
+          <span>Automatyczne odświeżanie zawartości...</span>
         </div>
       )}
 
