@@ -2,15 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiUpload, FiImage, FiVideo, FiMic, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiUpload, FiImage, FiVideo, FiMic, FiCheck, FiAlertCircle, FiX } from 'react-icons/fi';
 
 type MediaType = 'photo' | 'video' | 'audio';
 type StorageType = 'local' | 's3';
 
+interface FileWithPreview extends File {
+  preview?: string;
+  id: string;
+  progress: number;
+  error?: string;
+  uploaded?: boolean;
+}
+
 export default function UploadForm() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<MediaType>('photo');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -36,6 +44,15 @@ export default function UploadForm() {
     fetchStorageType();
   }, []);
 
+  // Cleanup previews when component unmounts
+  useEffect(() => {
+    return () => {
+      files.forEach(file => {
+        if (file.preview) URL.revokeObjectURL(file.preview);
+      });
+    };
+  }, [files]);
+
   const allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
   const allowedAudioTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg'];
@@ -54,135 +71,265 @@ export default function UploadForm() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
+    if (e.target.files && e.target.files.length > 0) {
       const allowedTypes = getAllowedTypes();
+      const selectedFiles = Array.from(e.target.files);
       
-      if (!allowedTypes.includes(selectedFile.type)) {
-        setError(`Nieprawidłowy format pliku. Proszę przesłać prawidłowy plik ${activeTab === 'photo' ? 'zdjęcia' : activeTab === 'video' ? 'wideo' : 'audio'}.`);
-        setFile(null);
-        return;
-      }
+      // Check file types and add preview for images
+      const newFiles = selectedFiles.map(file => {
+        const isValidType = allowedTypes.includes(file.type);
+        const fileWithPreview: FileWithPreview = Object.assign(file, {
+          id: crypto.randomUUID(),
+          progress: 0,
+          error: isValidType ? undefined : `Nieprawidłowy format pliku: ${file.name}`
+        });
+        
+        // Only create previews for images
+        if (isValidType && file.type.startsWith('image/')) {
+          fileWithPreview.preview = URL.createObjectURL(file);
+        }
+        
+        return fileWithPreview;
+      });
       
-      setFile(selectedFile);
+      setFiles(prev => [...prev, ...newFiles]);
       setError('');
     }
   };
 
+  const removeFile = (id: string) => {
+    setFiles(prev => {
+      const fileToRemove = prev.find(f => f.id === id);
+      if (fileToRemove?.preview) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      return prev.filter(f => f.id !== id);
+    });
+  };
+
   const uploadToS3 = async () => {
-    if (!file) {
-      setError('Proszę wybrać plik do przesłania');
+    if (files.length === 0) {
+      setError('Proszę wybrać pliki do przesłania');
       return false;
     }
 
-    // Step 1: Get a presigned upload URL from our API
-    const urlResponse = await fetch('/api/generate-upload-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fileType: file.type,
-        fileName: file.name,
-        folder: activeTab
-      })
-    });
-    
-    if (!urlResponse.ok) {
-      throw new Error('Nie udało się uzyskać URL do przesłania pliku');
+    // Get only files without errors
+    const validFiles = files.filter(file => !file.error);
+    if (validFiles.length === 0) {
+      setError('Brak prawidłowych plików do przesłania');
+      return false;
     }
+
+    // Track uploads
+    let completedUploads = 0;
+    let failedUploads = 0;
     
-    const { uploadUrl, fileUrl, key } = await urlResponse.json();
+    // Create a copy of files to update during upload
+    const updatedFiles = [...files];
     
-    // Step 2: Upload file directly to S3 using the presigned URL
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type
+    // Upload each file
+    const uploadPromises = validFiles.map(async (file, index) => {
+      try {
+        // Update progress to show we're starting this file
+        const fileIndex = updatedFiles.findIndex(f => f.id === file.id);
+        updatedFiles[fileIndex].progress = 5;
+        setFiles([...updatedFiles]);
+        
+        // Step 1: Get a presigned upload URL from our API
+        const urlResponse = await fetch('/api/generate-upload-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileType: file.type,
+            fileName: file.name,
+            folder: activeTab
+          })
+        });
+        
+        if (!urlResponse.ok) {
+          throw new Error('Nie udało się uzyskać URL do przesłania pliku');
+        }
+        
+        const { uploadUrl, fileUrl, key } = await urlResponse.json();
+        updatedFiles[fileIndex].progress = 20;
+        setFiles([...updatedFiles]);
+        
+        // Step 2: Upload file directly to S3 using the presigned URL
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type
+          }
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error('Nie udało się przesłać pliku');
+        }
+        
+        updatedFiles[fileIndex].progress = 60;
+        setFiles([...updatedFiles]);
+        
+        // Step 3: Save file metadata to our API
+        const metadataResponse = await fetch('/api/save-file-metadata', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: fileUrl,
+            key: key,
+            type: activeTab,
+            name,
+            message,
+            fileName: file.name,
+            createdAt: new Date().toISOString()
+          })
+        });
+        
+        if (!metadataResponse.ok) {
+          throw new Error('Nie udało się zapisać informacji o pliku');
+        }
+        
+        // Mark this file as successfully uploaded
+        updatedFiles[fileIndex].progress = 100;
+        updatedFiles[fileIndex].uploaded = true;
+        setFiles([...updatedFiles]);
+        
+        completedUploads++;
+        
+        // Update overall progress
+        setUploadProgress(Math.floor((completedUploads + failedUploads) * 100 / validFiles.length));
+        
+        return true;
+      } catch (error) {
+        console.error(`Error uploading file ${file.name}:`, error);
+        
+        // Mark this file as failed
+        const fileIndex = updatedFiles.findIndex(f => f.id === file.id);
+        updatedFiles[fileIndex].error = (error as Error).message;
+        setFiles([...updatedFiles]);
+        
+        failedUploads++;
+        
+        // Update overall progress even for failed uploads
+        setUploadProgress(Math.floor((completedUploads + failedUploads) * 100 / validFiles.length));
+        
+        return false;
       }
     });
     
-    if (!uploadResponse.ok) {
-      throw new Error('Nie udało się przesłać pliku');
-    }
+    // Wait for all uploads to complete
+    const results = await Promise.all(uploadPromises);
     
-    // Step 3: Save file metadata to our API
-    const metadataResponse = await fetch('/api/save-file-metadata', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: fileUrl,
-        key: key,
-        type: activeTab,
-        name,
-        message,
-        fileName: file.name,
-        createdAt: new Date().toISOString()
-      })
-    });
-    
-    if (!metadataResponse.ok) {
-      throw new Error('Nie udało się zapisać informacji o pliku');
-    }
-    
-    return true;
+    // Return true if at least one file was uploaded successfully
+    return results.some(result => result === true);
   };
   
   const uploadToLocal = async () => {
-    if (!file) {
-      setError('Proszę wybrać plik do przesłania');
+    if (files.length === 0) {
+      setError('Proszę wybrać pliki do przesłania');
       return false;
     }
 
-    // Upload using the local upload endpoint
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', activeTab);
-    formData.append('name', name);
-    formData.append('message', message);
+    // Get only files without errors
+    const validFiles = files.filter(file => !file.error);
+    if (validFiles.length === 0) {
+      setError('Brak prawidłowych plików do przesłania');
+      return false;
+    }
+
+    // Track uploads
+    let completedUploads = 0;
+    let failedUploads = 0;
     
-    const response = await fetch('/api/local-upload', {
-      method: 'POST',
-      body: formData
+    // Create a copy of files to update during upload
+    const updatedFiles = [...files];
+    
+    // Upload each file
+    const uploadPromises = validFiles.map(async (file, index) => {
+      try {
+        // Update progress to show we're starting this file
+        const fileIndex = updatedFiles.findIndex(f => f.id === file.id);
+        updatedFiles[fileIndex].progress = 10;
+        setFiles([...updatedFiles]);
+        
+        // Upload using the local upload endpoint
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', activeTab);
+        formData.append('name', name);
+        formData.append('message', message);
+        
+        updatedFiles[fileIndex].progress = 30;
+        setFiles([...updatedFiles]);
+        
+        const response = await fetch('/api/local-upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        // Check if the response is successful
+        let result;
+        try {
+          const responseText = await response.text();
+          result = JSON.parse(responseText);
+          
+          if (!response.ok) {
+            throw new Error(result.error || `Przesyłanie nie powiodło się: ${response.status}`);
+          }
+          
+          // Mark this file as successfully uploaded
+          updatedFiles[fileIndex].progress = 100;
+          updatedFiles[fileIndex].uploaded = true;
+          setFiles([...updatedFiles]);
+          
+          completedUploads++;
+          
+          // Update overall progress
+          setUploadProgress(Math.floor((completedUploads + failedUploads) * 100 / validFiles.length));
+          
+          return true;
+        } catch (parseError) {
+          console.error('Failed to parse response:', parseError);
+          throw new Error('Nie udało się przetworzyć odpowiedzi serwera');
+        }
+      } catch (error) {
+        console.error(`Error uploading file ${file.name}:`, error);
+        
+        // Mark this file as failed
+        const fileIndex = updatedFiles.findIndex(f => f.id === file.id);
+        updatedFiles[fileIndex].error = (error as Error).message;
+        setFiles([...updatedFiles]);
+        
+        failedUploads++;
+        
+        // Update overall progress even for failed uploads
+        setUploadProgress(Math.floor((completedUploads + failedUploads) * 100 / validFiles.length));
+        
+        return false;
+      }
     });
     
-    // Check if the response is successful
-    let result;
-    try {
-      const responseText = await response.text();
-      result = JSON.parse(responseText);
-      
-      if (!response.ok) {
-        throw new Error(result.error || `Przesyłanie nie powiodło się: ${response.status}`);
-      }
-    } catch (parseError) {
-      console.error('Failed to parse response:', parseError);
-      throw new Error('Nie udało się przetworzyć odpowiedzi serwera');
-    }
+    // Wait for all uploads to complete
+    const results = await Promise.all(uploadPromises);
     
-    return true;
+    // Return true if at least one file was uploaded successfully
+    return results.some(result => result === true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!file) {
-      setError('Proszę wybrać plik do przesłania');
+    if (files.length === 0) {
+      setError('Proszę wybrać pliki do przesłania');
       return;
     }
     
     try {
       setUploading(true);
       setError('');
+      setUploadProgress(0);
       
-      // We'll simulate upload progress since we don't have real progress events
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const newProgress = prev + Math.floor(Math.random() * 10);
-          return newProgress > 90 ? 90 : newProgress;
-        });
-      }, 300);
-      
-      // Upload file based on storage type
+      // Upload files based on storage type
       let success = false;
       if (storageType === 's3') {
         success = await uploadToS3();
@@ -190,16 +337,12 @@ export default function UploadForm() {
         success = await uploadToLocal();
       }
       
-      // Set to 100% when upload is complete
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      
       if (success) {
         setSuccess(true);
         
         // Reset form after 2 seconds
         setTimeout(() => {
-          setFile(null);
+          setFiles([]);
           setName('');
           setMessage('');
           setUploadProgress(0);
@@ -210,7 +353,7 @@ export default function UploadForm() {
       
     } catch (err) {
       console.error('Upload error:', err);
-      setError('Błąd przesyłania pliku: ' + (err as Error).message);
+      setError('Błąd przesyłania plików: ' + (err as Error).message);
     } finally {
       setUploading(false);
     }
@@ -289,11 +432,11 @@ export default function UploadForm() {
 
           <div className="mb-6">
             <label className="block text-black font-medium mb-2">
-              Dodaj {activeTab === 'photo' ? 'zdjęcie' : activeTab === 'video' ? 'wideo' : 'audio'}
+              Dodaj {activeTab === 'photo' ? 'zdjęcia' : activeTab === 'video' ? 'wideo' : 'audio'}
             </label>
             <div
               className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center ${
-                file ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary'
+                files.length > 0 ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary'
               }`}
             >
               <input
@@ -302,17 +445,20 @@ export default function UploadForm() {
                 onChange={handleFileChange}
                 className="hidden"
                 accept={getAllowedTypes().join(',')}
+                multiple
               />
               <label
                 htmlFor="file"
                 className="cursor-pointer flex flex-col items-center justify-center"
               >
-                {file ? (
+                {files.length > 0 ? (
                   <>
                     <FiCheck className="text-3xl text-green-500 mb-2" />
-                    <p className="font-medium text-green-700 break-all">{file.name}</p>
+                    <p className="font-medium text-green-700">
+                      {files.length} {files.length === 1 ? 'plik wybrany' : 'pliki wybrane'}
+                    </p>
                     <p className="text-sm text-green-600 mt-1">
-                      {(file.size / (1024 * 1024)).toFixed(2)} MB
+                      Kliknij, aby dodać więcej
                     </p>
                   </>
                 ) : (
@@ -333,6 +479,71 @@ export default function UploadForm() {
               </label>
             </div>
           </div>
+
+          {/* File previews */}
+          {files.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-black font-medium mb-2">Wybrane pliki</h4>
+              <div className="space-y-2">
+                {files.map((file) => (
+                  <div 
+                    key={file.id} 
+                    className={`flex items-center p-2 rounded-lg border ${
+                      file.error ? 'border-red-200 bg-red-50' : 
+                      file.uploaded ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                    }`}
+                  >
+                    {file.preview ? (
+                      <div className="w-12 h-12 mr-3 relative rounded overflow-hidden">
+                        <img 
+                          src={file.preview} 
+                          alt={file.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 mr-3 bg-gray-100 flex items-center justify-center rounded">
+                        {activeTab === 'video' ? (
+                          <FiVideo className="text-gray-500" />
+                        ) : activeTab === 'audio' ? (
+                          <FiMic className="text-gray-500" />
+                        ) : (
+                          <FiImage className="text-gray-500" />
+                        )}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-black truncate">{file.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                      {file.error && (
+                        <p className="text-xs text-red-600 mt-1">{file.error}</p>
+                      )}
+                      {uploading && !file.error && (
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5">
+                          <div
+                            className={`h-1.5 rounded-full ${file.uploaded ? 'bg-green-500' : 'bg-primary'}`}
+                            style={{ width: `${file.progress}%` }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                    {!uploading && (
+                      <button 
+                        type="button"
+                        onClick={() => removeFile(file.id)} 
+                        className="p-1 text-gray-500 hover:text-red-500"
+                        title="Usuń plik"
+                      >
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-2 sm:p-3 bg-red-50 text-red-700 rounded-lg flex items-start">
@@ -357,9 +568,9 @@ export default function UploadForm() {
 
           <button
             type="submit"
-            disabled={uploading}
+            disabled={uploading || files.length === 0}
             className={`w-full py-2 sm:py-3 btn text-sm sm:text-base ${
-              uploading ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary'
+              uploading || files.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary'
             }`}
           >
             {uploading ? 'Przesyłanie...' : 'Wyślij'}
