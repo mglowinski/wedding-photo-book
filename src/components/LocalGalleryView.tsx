@@ -272,26 +272,26 @@ export default function LocalGalleryView() {
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={closeDeleteConfirm}>
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-semibold mb-4">Potwierdź usunięcie</h3>
-            <p className="mb-6">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg max-w-md mx-3 sm:mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Potwierdź usunięcie</h3>
+            <p className="mb-4 sm:mb-6 text-sm sm:text-base">
               Czy na pewno chcesz usunąć plik <strong>{deleteConfirm.fileName || 'wybrany'}</strong>? Tej operacji nie można cofnąć.
             </p>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-2 sm:space-x-3">
               <button
                 onClick={closeDeleteConfirm}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-xs sm:text-sm"
                 disabled={deleting}
               >
                 Anuluj
               </button>
               <button
                 onClick={() => handleDeleteFile(deleteConfirm)}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center text-xs sm:text-sm"
                 disabled={deleting}
               >
                 {deleting && (
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -306,32 +306,33 @@ export default function LocalGalleryView() {
       {/* Image Modal */}
       {modalImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" onClick={closeImageModal}>
-          <div className="relative max-w-5xl max-h-[90vh] w-full mx-4">
+          <div className="relative max-w-5xl max-h-[90vh] w-full mx-2 sm:mx-4">
             <button 
-              className="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 z-10"
+              className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black bg-opacity-50 text-white p-1.5 sm:p-2 rounded-full hover:bg-opacity-70 z-10"
               onClick={closeImageModal}
             >
-              <FiX size={24} />
+              <FiX size={20} className="sm:hidden" />
+              <FiX size={24} className="hidden sm:block" />
             </button>
             
-            <div className="bg-white p-4 rounded-lg shadow-lg max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center mb-3">
-                <FiUser className="text-gray-400 mr-1.5" />
-                <h3 className="font-medium text-black">{modalImage.name}</h3>
+            <div className="bg-white p-3 sm:p-4 rounded-lg shadow-lg max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center mb-2 sm:mb-3">
+                <FiUser className="text-gray-400 mr-1 sm:mr-1.5" />
+                <h3 className="font-medium text-black text-sm sm:text-base">{modalImage.name}</h3>
               </div>
               
               {modalImage.message && (
-                <div className="mb-4 text-gray-600 flex items-start">
-                  <FiMessageCircle className="text-gray-400 mr-1.5 mt-0.5 flex-shrink-0" />
-                  <p>{modalImage.message}</p>
+                <div className="mb-3 sm:mb-4 text-gray-600 flex items-start">
+                  <FiMessageCircle className="text-gray-400 mr-1 sm:mr-1.5 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs sm:text-sm">{modalImage.message}</p>
                 </div>
               )}
               
-              <div className="mb-4">
+              <div className="mb-3 sm:mb-4">
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="w-full h-auto max-h-[70vh] object-contain rounded-md"
+                  className="w-full h-auto max-h-[60vh] sm:max-h-[70vh] object-contain rounded-md"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
@@ -359,13 +360,13 @@ export default function LocalGalleryView() {
               </div>
               
               <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-500">
+                <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[45%]">
                   {formatDate(modalImage.createdAt)}
                 </div>
-                <div className="flex space-x-3">
+                <div className="flex space-x-2 sm:space-x-3">
                   <button
                     onClick={() => handleDownload(modalImage.url, modalImage.fileName || '')}
-                    className="flex items-center text-primary hover:text-primary/80"
+                    className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
                   >
                     <FiDownload className="mr-1" /> Pobierz
                   </button>
@@ -374,7 +375,7 @@ export default function LocalGalleryView() {
                       closeImageModal();
                       openDeleteConfirm(modalImage);
                     }}
-                    className="flex items-center text-red-600 hover:text-red-700"
+                    className="flex items-center text-red-600 hover:text-red-700 text-xs sm:text-sm"
                   >
                     <FiTrash2 className="mr-1" /> Usuń
                   </button>
@@ -385,7 +386,7 @@ export default function LocalGalleryView() {
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-3 sm:gap-0">
         <div className="text-black text-sm font-medium bg-gray-100 px-3 py-1 rounded-full">
           {filteredFiles.length} {filter === 'all' 
             ? 'elementów' 
@@ -395,17 +396,17 @@ export default function LocalGalleryView() {
                 ? 'wideo' 
                 : 'plików audio'}
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <button 
             onClick={handleRefresh}
-            className={`px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-black flex items-center ${refreshing ? 'opacity-70 cursor-wait' : ''}`}
+            className={`px-2 sm:px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-black flex items-center text-xs sm:text-sm ${refreshing ? 'opacity-70 cursor-wait' : ''}`}
             disabled={refreshing}
           >
             <FiRefreshCw className={`mr-1 ${refreshing ? 'animate-spin' : ''}`} /> Odśwież
           </button>
           <button 
             onClick={() => setFilter('all')}
-            className={`px-3 py-1 rounded-md ${
+            className={`px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm ${
               filter === 'all' 
                 ? 'bg-primary text-white' 
                 : 'bg-gray-100 hover:bg-gray-200 text-black'
@@ -415,7 +416,7 @@ export default function LocalGalleryView() {
           </button>
           <button 
             onClick={() => setFilter('photo')}
-            className={`px-3 py-1 rounded-md flex items-center ${
+            className={`px-2 sm:px-3 py-1 rounded-md flex items-center text-xs sm:text-sm ${
               filter === 'photo' 
                 ? 'bg-primary text-white' 
                 : 'bg-gray-100 hover:bg-gray-200 text-black'
@@ -425,7 +426,7 @@ export default function LocalGalleryView() {
           </button>
           <button 
             onClick={() => setFilter('video')}
-            className={`px-3 py-1 rounded-md flex items-center ${
+            className={`px-2 sm:px-3 py-1 rounded-md flex items-center text-xs sm:text-sm ${
               filter === 'video' 
                 ? 'bg-primary text-white' 
                 : 'bg-gray-100 hover:bg-gray-200 text-black'
@@ -435,7 +436,7 @@ export default function LocalGalleryView() {
           </button>
           <button 
             onClick={() => setFilter('audio')}
-            className={`px-3 py-1 rounded-md flex items-center ${
+            className={`px-2 sm:px-3 py-1 rounded-md flex items-center text-xs sm:text-sm ${
               filter === 'audio' 
                 ? 'bg-primary text-white' 
                 : 'bg-gray-100 hover:bg-gray-200 text-black'
@@ -447,9 +448,9 @@ export default function LocalGalleryView() {
       </div>
 
       {refreshing && (
-        <div className="text-center py-4 mb-4 bg-gray-50 rounded-md">
+        <div className="text-center py-3 sm:py-4 mb-3 sm:mb-4 bg-gray-50 rounded-md">
           <FiRefreshCw className="inline-block animate-spin mr-2" />
-          <span>Odświeżanie galerii...</span>
+          <span className="text-sm sm:text-base">Odświeżanie galerii...</span>
         </div>
       )}
 
@@ -462,17 +463,17 @@ export default function LocalGalleryView() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredFiles.map((file, index) => (
             <div key={index} className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center">
-                    <FiUser className="text-gray-400 mr-1.5" />
-                    <h4 className="font-medium text-black">{file.name}</h4>
+              <div className="p-3 sm:p-4">
+                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                  <div className="flex items-center max-w-[65%]">
+                    <FiUser className="text-gray-400 mr-1 sm:mr-1.5 flex-shrink-0" />
+                    <h4 className="font-medium text-black text-sm sm:text-base truncate">{file.name}</h4>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs bg-gray-100 text-black px-2 py-1 rounded-full">
+                  <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                    <span className="text-xs bg-gray-100 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                       {file.type === 'photo' 
                         ? 'zdjęcie' 
                         : file.type === 'video' 
@@ -486,22 +487,23 @@ export default function LocalGalleryView() {
                       className="text-red-500 hover:text-red-700 p-1"
                       title="Usuń plik"
                     >
-                      <FiTrash2 size={16} />
+                      <FiTrash2 size={14} className="sm:hidden" />
+                      <FiTrash2 size={16} className="hidden sm:block" />
                     </button>
                   </div>
                 </div>
 
                 {file.message && (
-                  <div className="mb-3 text-sm text-gray-600 flex items-start">
-                    <FiMessageCircle className="text-gray-400 mr-1.5 mt-0.5 flex-shrink-0" />
-                    <p>{file.message}</p>
+                  <div className="mb-2 sm:mb-3 text-xs sm:text-sm text-gray-600 flex items-start">
+                    <FiMessageCircle className="text-gray-400 mr-1 sm:mr-1.5 mt-0.5 flex-shrink-0" />
+                    <p className="line-clamp-2">{file.message}</p>
                   </div>
                 )}
 
-                <div className="mb-4">
+                <div className="mb-3 sm:mb-4">
                   {file.type === 'photo' && (
                     <div 
-                      className="relative w-full h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
+                      className="relative w-full h-36 sm:h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
                       onClick={() => openImageModal(file)}
                     >
                       <img
@@ -573,12 +575,12 @@ export default function LocalGalleryView() {
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 truncate max-w-[65%]">
                     {formatDate(file.createdAt)}
                   </div>
                   <button
                     onClick={() => handleDownload(file.url, file.fileName || '')}
-                    className="flex items-center text-primary hover:text-primary/80 text-sm"
+                    className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
                   >
                     <FiDownload className="mr-1" /> Pobierz
                   </button>
