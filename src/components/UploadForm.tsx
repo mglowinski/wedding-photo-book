@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiUpload, FiImage, FiVideo, FiMic, FiCheck, FiAlertCircle, FiX } from 'react-icons/fi';
 
-type MediaType = 'photo' | 'video' | 'audio';
+type MediaType = 'photo' | 'video';
 type StorageType = 'local' | 's3';
 
 interface FileWithPreview extends File {
@@ -55,7 +55,6 @@ export default function UploadForm() {
 
   const allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
-  const allowedAudioTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg'];
 
   const handleTabChange = (newTab: MediaType) => {
     if (activeTab !== newTab) {
@@ -82,8 +81,6 @@ export default function UploadForm() {
         return allowedPhotoTypes;
       case 'video':
         return allowedVideoTypes;
-      case 'audio':
-        return allowedAudioTypes;
       default:
         return [];
     }
@@ -389,16 +386,6 @@ export default function UploadForm() {
         >
           <FiVideo className="mr-1 sm:mr-2" /> Wideo
         </button>
-        <button
-          onClick={() => handleTabChange('audio')}
-          className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
-            activeTab === 'audio'
-              ? 'text-primary border-b-2 border-primary'
-              : 'text-black hover:text-primary'
-          }`}
-        >
-          <FiMic className="mr-1 sm:mr-2" /> Audio
-        </button>
       </div>
 
       {success ? (
@@ -439,7 +426,7 @@ export default function UploadForm() {
 
           <div className="mb-6">
             <label className="block text-black font-medium mb-2">
-              Dodaj {activeTab === 'photo' ? 'zdjęcia' : activeTab === 'video' ? 'wideo' : 'audio'}
+              Dodaj {activeTab === 'photo' ? 'zdjęcia' : 'wideo'}
             </label>
             <div
               className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center ${
@@ -478,9 +465,7 @@ export default function UploadForm() {
                     <p className="text-xs sm:text-sm text-black mt-1">
                       {activeTab === 'photo'
                         ? 'JPG, PNG, GIF, WEBP'
-                        : activeTab === 'video'
-                        ? 'MP4, WEBM, MOV'
-                        : 'MP3, WAV, OGG'}
+                        : 'MP4, WEBM, MOV'}
                     </p>
                   </>
                 )}
@@ -513,8 +498,6 @@ export default function UploadForm() {
                       <div className="w-12 h-12 mr-3 bg-gray-100 flex items-center justify-center rounded">
                         {activeTab === 'video' ? (
                           <FiVideo className="text-gray-500" />
-                        ) : activeTab === 'audio' ? (
-                          <FiMic className="text-gray-500" />
                         ) : (
                           <FiImage className="text-gray-500" />
                         )}
