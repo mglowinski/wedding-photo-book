@@ -77,13 +77,6 @@ export default function LocalGalleryView() {
   // Load files on component mount
   useEffect(() => {
     fetchFiles(false);
-    
-    // Set up periodic refresh
-    const refreshInterval = setInterval(() => fetchFiles(false), 30 * 1000); // Refresh every 30 seconds
-    
-    return () => {
-      clearInterval(refreshInterval);
-    };
   }, []);
 
   // Filter files based on selected filter
