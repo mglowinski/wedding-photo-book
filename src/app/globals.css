@@ -19,8 +19,13 @@ body {
   background-image: url('/images/background.png');
   background-position: center;
   background-size: cover;
-  /* Removed fixed attachment to prevent mobile scroll issues */
+  background-attachment: fixed;
   background-repeat: no-repeat;
+  
+  /* Make background scroll normally only on mobile */
+  @media (max-width: 768px) {
+    background-attachment: scroll;
+  }
   /* Add a light overlay to make text more readable */
   background-color: rgba(0, 0, 0, 0.2);
   background-blend-mode: multiply;
