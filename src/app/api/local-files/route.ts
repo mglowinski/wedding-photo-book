@@ -11,6 +11,11 @@ const METADATA_FILE = path.join(process.cwd(), 'public', 'uploads', 'metadata.js
 // Path to S3 files metadata
 const S3_FILES_PATH = path.join(process.cwd(), 'data', 'files.json');
 
+// In-memory cache for metadata
+let metadataCache: any[] | null = null;
+let lastCacheTime = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 // Type for metadata entries
 interface MediaItem {
   id: string;
@@ -97,66 +102,48 @@ interface S3FileMetadata {
 
 export async function GET(request: NextRequest) {
   try {
+    const currentTime = Date.now();
+    const forcedSync = request.nextUrl.searchParams.get('force') === 'true';
+    const skipCache = forcedSync || request.nextUrl.searchParams.get('no-cache') === 'true';
+    
+    // Check if we can use cached data (not forced refresh and cache is valid)
+    if (metadataCache && !skipCache && currentTime - lastCacheTime < CACHE_TTL) {
+      return new NextResponse(JSON.stringify({ files: metadataCache, cached: true }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=300' // 5 minutes browser cache
+        }
+      });
+    }
+    
     let files = [];
-    const currentTime = new Date().toISOString();
     
     // If using S3 storage, get files from S3 metadata
     if (isS3Storage() || process.env.VERCEL) {
-      console.log(`[${currentTime}] Using S3 storage mode with public URLs`);
-      
-      // Get files info - only do a forced sync if explicitly requested
-      // as we're using public URLs that don't expire
-      const forcedSync = request.nextUrl.searchParams.get('force') === 'true';
-      console.log(`[${currentTime}] Force sync parameter: ${forcedSync} (only needed for new files)`);
-      
-      // Only sync if force is true (for new files) - no need to refresh URLs anymore
+      // Only sync if force is true (for new files) - no need to refresh URLs anymore with public URLs
       if (forcedSync) {
         await syncS3FilesWithMetadataSignedUrls(false);
       }
       
-              // Then fetch the metadata which should now include all files with direct URLs
+      // Fetch the metadata
       const s3Metadata = await getMetadataFromS3();
-      console.log(`[${currentTime}] Retrieved ${s3Metadata.length} files from S3 metadata`);
       
-      // Log each file for debugging
-      s3Metadata.forEach((file, index) => {
-        console.log(`[${currentTime}] File ${index + 1}:`, {
-          url: file.url ? file.url.substring(0, 50) + '...' : 'null',
-          key: file.key || 'missing key',
-          type: file.type || 'unknown type',
-          name: file.name || 'unnamed',
-          fileName: file.fileName || 'no filename',
-          createdAt: file.createdAt || 'no date'
-        });
-      });
-      
-      files = s3Metadata.map((file: S3FileMetadata) => {
-        const fileInfo = {
-          url: file.url, // Direct public URL
-          key: file.key, // Include the S3 key for deletion
-          type: file.type,
-          name: file.name,
-          message: file.message || '',
-          fileName: file.fileName || path.basename(file.url.split('?')[0]), // Remove query params
-          createdAt: file.createdAt
-        };
-        console.log(`[${currentTime}] Mapped file info:`, {
-          url: fileInfo.url.substring(0, 50) + '...',
-          key: fileInfo.key,
-          type: fileInfo.type,
-          name: fileInfo.name,
-          fileName: fileInfo.fileName
-        });
-        return fileInfo;
-      });
+      // Map files with minimal logging
+      files = s3Metadata.map((file: S3FileMetadata) => ({
+        url: file.url, // Direct public URL
+        key: file.key, // Include the S3 key for deletion
+        type: file.type,
+        name: file.name,
+        message: file.message || '',
+        fileName: file.fileName || path.basename(file.url.split('?')[0]), // Remove query params
+        createdAt: file.createdAt
+      }));
     } else {
       // Scan uploads directory for all files
       const fileUrls = scanDirectory(UPLOAD_DIR);
-      console.log(`[${currentTime}] Found ${fileUrls.length} files in uploads directory`);
       
       // Get metadata for all files
       const metadata = readMetadata();
-      console.log(`[${currentTime}] Read metadata with ${metadata.length} entries`);
       
       // Create file objects with metadata
       files = fileUrls.map(url => {
@@ -183,13 +170,15 @@ export async function GET(request: NextRequest) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     
-    console.log(`[${currentTime}] Returning ${files.length} files in response`);
+    // Update cache
+    metadataCache = files;
+    lastCacheTime = currentTime;
     
-    // Return with cache control header to prevent stale data
+    // Return with appropriate cache headers
     return new NextResponse(JSON.stringify({ files }), {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-store, max-age=0'
+        'Cache-Control': 'public, max-age=300' // 5 minutes browser cache
       }
     });
   } catch (error) {

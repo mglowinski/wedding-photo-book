@@ -21,6 +21,11 @@ export interface UploadUrlResult {
   key: string;
 }
 
+// In-memory cache for S3 metadata
+let metadataCache: any[] | null = null;
+let lastCacheTime = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 /**
  * Generates a pre-signed URL for uploading a file to S3
  */
@@ -104,8 +109,13 @@ export async function saveMetadataToS3(data: any): Promise<boolean> {
  */
 export async function getMetadataFromS3(): Promise<any[]> {
   try {
+    // Check if we can use cached data
+    const currentTime = Date.now();
+    if (metadataCache && currentTime - lastCacheTime < CACHE_TTL) {
+      return metadataCache;
+    }
+    
     const metadataFile = 'metadata/files.json';
-    console.log(`Attempting to get metadata from S3: ${metadataFile}`);
     
     const getCommand = new GetObjectCommand({
       Bucket: bucket,
@@ -117,12 +127,16 @@ export async function getMetadataFromS3(): Promise<any[]> {
       const bodyContents = await response.Body?.transformToString();
       if (bodyContents) {
         const metadata = JSON.parse(bodyContents);
-        console.log(`Successfully retrieved metadata with ${metadata.length} entries`);
+        
+        // Update cache
+        metadataCache = metadata;
+        lastCacheTime = currentTime;
+        
         return metadata;
       }
     } catch (error) {
       // If file doesn't exist, return empty array
-      console.log('Metadata file not found, returning empty array:', error);
+      console.error('Metadata file not found:', error);
     }
     
     return [];
@@ -147,8 +161,6 @@ export async function generateViewUrl(key: string): Promise<string> {
  */
 export async function listS3FilesWithSignedUrls(): Promise<any[]> {
   try {
-    console.log(`Listing files in S3 bucket: ${bucket}, region: ${region}`);
-    
     const files: any[] = [];
     let continuationToken: string | undefined = undefined;
     
@@ -162,33 +174,27 @@ export async function listS3FilesWithSignedUrls(): Promise<any[]> {
           MaxKeys: 1000,
         });
         
-        console.log('Sending ListObjectsV2Command...');
         const response: ListObjectsV2CommandOutput = await s3Client.send(command);
-        console.log(`Got response with ${response.Contents?.length || 0} items`);
         
         // Process files
         if (response.Contents) {
           for (const item of response.Contents) {
             if (!item.Key) continue;
             
-            console.log(`Processing item: ${item.Key}`);
-            
             // Skip directories and metadata file
             if (!item.Key.endsWith('/') && !item.Key.includes('metadata/')) {
               // Determine file type from path or extension
               let type = 'other';
-              if (item.Key.startsWith('photo/') || item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+              if (item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
                 type = 'photo';
-              } else if (item.Key.startsWith('video/') || item.Key.match(/\.(mp4|webm|mov|avi)$/i)) {
+              } else if (item.Key.match(/\.(mp4|webm|mov|avi)$/i)) {
                 type = 'video';
-              } else if (item.Key.startsWith('audio/') || item.Key.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+              } else if (item.Key.match(/\.(mp3|wav|ogg|m4a)$/i)) {
                 type = 'audio';
               }
               
               // Use direct URL - no need for presigned URLs as the bucket is now public
               const directUrl = `https://${bucket}.s3.${region}.amazonaws.com/${item.Key}`;
-              
-              console.log(`Adding file: ${directUrl} (${type})`);
               
               // Create file entry
               files.push({
@@ -211,7 +217,6 @@ export async function listS3FilesWithSignedUrls(): Promise<any[]> {
       }
     } while (continuationToken);
     
-    console.log(`Total files found in S3: ${files.length}`);
     return files;
   } catch (error) {
     console.error('Error listing S3 files:', error);
@@ -225,11 +230,8 @@ export async function listS3FilesWithSignedUrls(): Promise<any[]> {
  */
 export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = false): Promise<boolean> {
   try {
-    console.log(`Starting metadata sync... Force refresh parameter: ${forceRefresh} (ignored since using direct URLs)`);
-    
     // Get all files from S3 with direct URLs
     const s3Files = await listS3FilesWithSignedUrls();
-    console.log(`Found ${s3Files.length} files in S3 bucket`);
     
     // Get existing metadata
     const metadataFile = 'metadata/files.json';
@@ -245,68 +247,45 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
       const bodyContents = await response.Body?.transformToString();
       if (bodyContents) {
         metadata = JSON.parse(bodyContents);
-        console.log(`Loaded existing metadata with ${metadata.length} entries`);
       }
     } catch (error) {
-      // If metadata file doesn't exist, that's okay
-      console.log('Metadata file not found, creating new one');
+      // If file doesn't exist, we'll create a new one
     }
     
-    // Update all files with proper direct URLs
-    let updatedCount = 0;
-    let newCount = 0;
+    // Check if any files need to be added to metadata
+    let changed = false;
+    const existingKeys = new Set(metadata.map((item: any) => item.key));
     
     for (const file of s3Files) {
-      const existingIndex = metadata.findIndex((item: any) => 
-        item.key === file.key || 
-        (item.url && item.url.includes(file.key.split('/').pop()))
-      );
-      
-      if (existingIndex >= 0) {
-        // Update URL to direct URL if it's a signed URL or missing
-        const currentUrl = metadata[existingIndex].url || '';
-        if (currentUrl.includes('X-Amz-Signature') || !currentUrl) {
-          // Replace signed URL with direct URL
-          metadata[existingIndex].url = file.url;
-          metadata[existingIndex].key = file.key; // Add key if missing
-          updatedCount++;
-        }
-      } else {
-        // Add new file with basic metadata
+      if (!existingKeys.has(file.key)) {
+        // New file, add to metadata
         metadata.push({
           url: file.url,
           key: file.key,
           type: file.type,
-          name: '', // No name needed
-          fileName: file.key.split('/').pop() || '',
-          createdAt: file.lastModified || new Date().toISOString()
+          name: 'Użytkownik', // Default name
+          fileName: file.key.split('/').pop() || 'plik',
+          createdAt: new Date(file.lastModified || new Date()).toISOString()
         });
-        newCount++;
+        changed = true;
       }
     }
     
-    console.log(`Metadata sync results: ${updatedCount} updated, ${newCount} new files`);
-    console.log(`Total metadata entries: ${metadata.length}`);
-    
-    // For debugging, log the first few entries
-    metadata.slice(0, 3).forEach((item: any, index: number) => {
-      console.log(`Metadata entry ${index + 1}:`, {
-        key: item.key,
-        type: item.type,
-        url: item.url ? item.url.substring(0, 50) + '...' : 'null'
+    // If we made changes, update the metadata file
+    if (changed) {
+      const putCommand = new PutObjectCommand({
+        Bucket: bucket,
+        Key: metadataFile,
+        Body: JSON.stringify(metadata, null, 2),
+        ContentType: 'application/json',
       });
-    });
+      
+      await s3Client.send(putCommand);
+      
+      // Reset the cache
+      metadataCache = null;
+    }
     
-    // Save updated metadata
-    const putCommand = new PutObjectCommand({
-      Bucket: bucket,
-      Key: metadataFile,
-      Body: JSON.stringify(metadata, null, 2),
-      ContentType: 'application/json',
-    });
-    
-    await s3Client.send(putCommand);
-    console.log('Metadata successfully saved to S3');
     return true;
   } catch (error) {
     console.error('Error syncing S3 files with metadata:', error);

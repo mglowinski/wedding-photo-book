@@ -51,6 +51,23 @@ export default function LocalGalleryView() {
         setRefreshing(true);
       }
       
+      // Check if we have files in sessionStorage first
+      const cachedData = !forceRefresh && sessionStorage.getItem('galleryFiles');
+      const cachedTimestamp = !forceRefresh && sessionStorage.getItem('galleryFilesTimestamp');
+      const cacheAge = cachedTimestamp ? Date.now() - parseInt(cachedTimestamp) : Infinity;
+      const cacheValid = cacheAge < 5 * 60 * 1000; // 5 minutes cache validity
+      
+      if (cachedData && cacheValid) {
+        // Use cached data if available and not expired
+        const parsedData = JSON.parse(cachedData);
+        setFiles(parsedData);
+        setLoading(false);
+        
+        // Refresh in background after using cache
+        refreshInBackground();
+        return;
+      }
+      
       // Add cache busting parameter and force parameter if needed
       const cacheBuster = `t=${Date.now()}`;
       const forceParam = forceRefresh ? 'force=true' : '';
@@ -64,25 +81,10 @@ export default function LocalGalleryView() {
       }
       
       const data = await response.json();
-      console.log(`Gallery received ${data.files?.length || 0} files from API`);
       
-      // Log the first few files for debugging
-      if (data.files && data.files.length > 0) {
-        data.files.slice(0, 5).forEach((file: any, index: number) => {
-          console.log(`Gallery file ${index + 1}:`, {
-            url: file.url ? file.url.substring(0, 50) + '...' : 'null',
-            type: file.type || 'unknown',
-            name: file.name || 'unnamed',
-            fileName: file.fileName || 'no filename'
-          });
-        });
-        
-        if (data.files.length > 5) {
-          console.log(`... and ${data.files.length - 5} more files`);
-        }
-      } else {
-        console.log('No files received from API');
-      }
+      // Save to sessionStorage
+      sessionStorage.setItem('galleryFiles', JSON.stringify(data.files || []));
+      sessionStorage.setItem('galleryFilesTimestamp', Date.now().toString());
       
       setFiles(data.files || []);
     } catch (err) {
@@ -93,11 +95,36 @@ export default function LocalGalleryView() {
       setRefreshing(false);
     }
   };
+  
+  // Refresh data in background without showing loading indicators
+  const refreshInBackground = async () => {
+    try {
+      const response = await fetch(`/api/local-files?t=${Date.now()}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Update storage and state if we got new data
+        if (data.files && data.files.length > 0) {
+          sessionStorage.setItem('galleryFiles', JSON.stringify(data.files));
+          sessionStorage.setItem('galleryFilesTimestamp', Date.now().toString());
+          setFiles(data.files);
+        }
+      }
+    } catch (error) {
+      // Silent fail for background refresh
+      console.error('Background refresh failed:', error);
+    }
+  };
 
   // Load files on component mount
   useEffect(() => {
-    // Load files when the component mounts - no need to force refresh with public URLs
     fetchFiles(false);
+    
+    // Set up periodic background refresh
+    const refreshInterval = setInterval(refreshInBackground, 5 * 60 * 1000); // Every 5 minutes
+    
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Filter files based on selected filter
