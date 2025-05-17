@@ -14,21 +14,25 @@
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
+/* Fixed background container */
+.fixed-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
   background-image: url('/images/background.png');
   background-position: center;
   background-size: cover;
-  background-attachment: fixed;
   background-repeat: no-repeat;
-  
-  /* Make background scroll normally only on mobile */
-  @media (max-width: 768px) {
-    background-attachment: scroll;
-  }
-  /* Add a light overlay to make text more readable */
   background-color: rgba(0, 0, 0, 0.2);
   background-blend-mode: multiply;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  min-height: 100vh;
   font-family: var(--font-montserrat);
 }
 

@@ -25,18 +25,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl">
-      <body 
-        className={montserrat.className}
-        style={{
-          backgroundImage: "url('/images/background.png')",
-          backgroundPosition: "center",
-          backgroundSize: "cover",
-          backgroundAttachment: "fixed",
-          backgroundRepeat: "no-repeat",
-          backgroundColor: "rgba(0, 0, 0, 0.2)",
-          backgroundBlendMode: "multiply",
-        }}
-      >
+      <body className={montserrat.className}>
+        <div className="fixed-bg"></div>
         <main className="min-h-screen">{children}</main>
       </body>
     </html>
