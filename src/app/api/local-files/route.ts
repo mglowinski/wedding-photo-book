@@ -11,11 +11,6 @@ const METADATA_FILE = path.join(process.cwd(), 'public', 'uploads', 'metadata.js
 // Path to S3 files metadata
 const S3_FILES_PATH = path.join(process.cwd(), 'data', 'files.json');
 
-// In-memory cache for metadata
-let metadataCache: any[] | null = null;
-let lastCacheTime = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
-
 // Type for metadata entries
 interface MediaItem {
   id: string;
@@ -102,28 +97,13 @@ interface S3FileMetadata {
 
 export async function GET(request: NextRequest) {
   try {
-    const currentTime = Date.now();
     const forcedSync = request.nextUrl.searchParams.get('force') === 'true';
-    const skipCache = forcedSync || request.nextUrl.searchParams.get('no-cache') === 'true';
-    
-    // Check if we can use cached data (not forced refresh and cache is valid)
-    if (metadataCache && !skipCache && currentTime - lastCacheTime < CACHE_TTL) {
-      return new NextResponse(JSON.stringify({ files: metadataCache, cached: true }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=300' // 5 minutes browser cache
-        }
-      });
-    }
-    
     let files = [];
     
     // If using S3 storage, get files from S3 metadata
     if (isS3Storage() || process.env.VERCEL) {
-      // Only sync if force is true (for new files) - no need to refresh URLs anymore with public URLs
-      if (forcedSync) {
-        await syncS3FilesWithMetadataSignedUrls(false);
-      }
+      // Always sync to ensure we have the latest files
+      await syncS3FilesWithMetadataSignedUrls(true);
       
       // Fetch the metadata
       const s3Metadata = await getMetadataFromS3();
@@ -170,15 +150,11 @@ export async function GET(request: NextRequest) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     
-    // Update cache
-    metadataCache = files;
-    lastCacheTime = currentTime;
-    
-    // Return with appropriate cache headers
+    // Return with no-cache headers to ensure fresh data
     return new NextResponse(JSON.stringify({ files }), {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300' // 5 minutes browser cache
+        'Cache-Control': 'no-store, max-age=0'
       }
     });
   } catch (error) {

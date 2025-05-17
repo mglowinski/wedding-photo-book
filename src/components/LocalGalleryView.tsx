@@ -51,24 +51,7 @@ export default function LocalGalleryView() {
         setRefreshing(true);
       }
       
-      // Check if we have files in sessionStorage first
-      const cachedData = !forceRefresh && sessionStorage.getItem('galleryFiles');
-      const cachedTimestamp = !forceRefresh && sessionStorage.getItem('galleryFilesTimestamp');
-      const cacheAge = cachedTimestamp ? Date.now() - parseInt(cachedTimestamp) : Infinity;
-      const cacheValid = cacheAge < 5 * 60 * 1000; // 5 minutes cache validity
-      
-      if (cachedData && cacheValid) {
-        // Use cached data if available and not expired
-        const parsedData = JSON.parse(cachedData);
-        setFiles(parsedData);
-        setLoading(false);
-        
-        // Refresh in background after using cache
-        refreshInBackground();
-        return;
-      }
-      
-      // Add cache busting parameter and force parameter if needed
+      // Add cache busting parameter to ensure we get fresh data
       const cacheBuster = `t=${Date.now()}`;
       const forceParam = forceRefresh ? 'force=true' : '';
       const queryParams = [cacheBuster, forceParam].filter(Boolean).join('&');
@@ -81,11 +64,6 @@ export default function LocalGalleryView() {
       }
       
       const data = await response.json();
-      
-      // Save to sessionStorage
-      sessionStorage.setItem('galleryFiles', JSON.stringify(data.files || []));
-      sessionStorage.setItem('galleryFilesTimestamp', Date.now().toString());
-      
       setFiles(data.files || []);
     } catch (err) {
       console.error('Error fetching files:', err);
@@ -95,32 +73,13 @@ export default function LocalGalleryView() {
       setRefreshing(false);
     }
   };
-  
-  // Refresh data in background without showing loading indicators
-  const refreshInBackground = async () => {
-    try {
-      const response = await fetch(`/api/local-files?t=${Date.now()}`);
-      if (response.ok) {
-        const data = await response.json();
-        // Update storage and state if we got new data
-        if (data.files && data.files.length > 0) {
-          sessionStorage.setItem('galleryFiles', JSON.stringify(data.files));
-          sessionStorage.setItem('galleryFilesTimestamp', Date.now().toString());
-          setFiles(data.files);
-        }
-      }
-    } catch (error) {
-      // Silent fail for background refresh
-      console.error('Background refresh failed:', error);
-    }
-  };
 
   // Load files on component mount
   useEffect(() => {
     fetchFiles(false);
     
-    // Set up periodic background refresh
-    const refreshInterval = setInterval(refreshInBackground, 5 * 60 * 1000); // Every 5 minutes
+    // Set up periodic refresh
+    const refreshInterval = setInterval(() => fetchFiles(false), 30 * 1000); // Refresh every 30 seconds
     
     return () => {
       clearInterval(refreshInterval);

@@ -21,11 +21,6 @@ export interface UploadUrlResult {
   key: string;
 }
 
-// In-memory cache for S3 metadata
-let metadataCache: any[] | null = null;
-let lastCacheTime = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
-
 /**
  * Generates a pre-signed URL for uploading a file to S3
  */
@@ -109,12 +104,6 @@ export async function saveMetadataToS3(data: any): Promise<boolean> {
  */
 export async function getMetadataFromS3(): Promise<any[]> {
   try {
-    // Check if we can use cached data
-    const currentTime = Date.now();
-    if (metadataCache && currentTime - lastCacheTime < CACHE_TTL) {
-      return metadataCache;
-    }
-    
     const metadataFile = 'metadata/files.json';
     
     const getCommand = new GetObjectCommand({
@@ -127,11 +116,6 @@ export async function getMetadataFromS3(): Promise<any[]> {
       const bodyContents = await response.Body?.transformToString();
       if (bodyContents) {
         const metadata = JSON.parse(bodyContents);
-        
-        // Update cache
-        metadataCache = metadata;
-        lastCacheTime = currentTime;
-        
         return metadata;
       }
     } catch (error) {
@@ -281,9 +265,6 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
       });
       
       await s3Client.send(putCommand);
-      
-      // Reset the cache
-      metadataCache = null;
     }
     
     return true;
