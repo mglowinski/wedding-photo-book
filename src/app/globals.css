@@ -19,7 +19,7 @@ body {
   background-image: url('/images/background.png');
   background-position: center;
   background-size: cover;
-  background-attachment: fixed;
+  /* Removed fixed attachment to prevent mobile scroll issues */
   background-repeat: no-repeat;
   /* Add a light overlay to make text more readable */
   background-color: rgba(0, 0, 0, 0.2);
