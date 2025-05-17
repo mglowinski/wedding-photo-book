@@ -24,7 +24,7 @@ export default function LocalGalleryView() {
   const [filter, setFilter] = useState<Filter>('all');
   const [modalImage, setModalImage] = useState<LocalFile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const [downloadingFileUrl, setDownloadingFileUrl] = useState<string | null>(null);
 
   // Function to determine file type based on URL
   const determineFileType = (url: string): FileType => {
@@ -88,8 +88,8 @@ export default function LocalGalleryView() {
   // Handle file download
   const handleDownload = async (url: string, fileName: string) => {
     try {
-      // Show temporary download indicator
-      setDownloading(true);
+      // Show temporary download indicator for this specific file
+      setDownloadingFileUrl(url);
       
       // Fetch the file as a blob
       const response = await fetch(url, {
@@ -123,12 +123,12 @@ export default function LocalGalleryView() {
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(blobUrl);
-        setDownloading(false);
+        setDownloadingFileUrl(null);
       }, 100);
     } catch (error) {
       console.error('Error downloading file:', error);
       alert('Nie udało się pobrać pliku. Spróbuj ponownie.');
-      setDownloading(false);
+      setDownloadingFileUrl(null);
     }
   };
 
@@ -271,10 +271,10 @@ export default function LocalGalleryView() {
                   </div>
                   <button
                     onClick={() => handleDownload(modalImage.url, modalImage.fileName || '')}
-                    disabled={downloading}
+                    disabled={downloadingFileUrl === modalImage.url}
                     className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
                   >
-                    {downloading ? (
+                    {downloadingFileUrl === modalImage.url ? (
                       <>
                         <span className="mr-1.5 w-3 h-3 rounded-full bg-primary animate-pulse"></span>
                         Pobieranie...
@@ -458,10 +458,10 @@ export default function LocalGalleryView() {
                   </div>
                   <button
                     onClick={() => handleDownload(file.url, file.fileName || '')}
-                    disabled={downloading}
+                    disabled={downloadingFileUrl === file.url}
                     className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
                   >
-                    {downloading ? (
+                    {downloadingFileUrl === file.url ? (
                       <>
                         <span className="mr-1.5 w-3 h-3 rounded-full bg-primary animate-pulse"></span>
                         Pobieranie...
