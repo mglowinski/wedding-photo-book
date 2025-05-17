@@ -298,9 +298,7 @@ export default function LocalGalleryView() {
             ? 'elementów' 
             : filter === 'photo' 
               ? 'zdjęć' 
-              : filter === 'video' 
-                ? 'wideo' 
-                : 'plików audio'}
+              : 'wideo'}
         </div>
         <div className="flex flex-wrap gap-2">
           <button 
@@ -333,16 +331,6 @@ export default function LocalGalleryView() {
           >
             <FiVideo className="mr-1" /> Wideo
           </button>
-          <button 
-            onClick={() => setFilter('audio')}
-            className={`px-2 sm:px-3 py-1 rounded-md flex items-center text-xs sm:text-sm ${
-              filter === 'audio' 
-                ? 'bg-primary text-white' 
-                : 'bg-gray-100 hover:bg-gray-200 text-black'
-            }`}
-          >
-            <FiMic className="mr-1" /> Audio
-          </button>
         </div>
       </div>
 
@@ -358,7 +346,7 @@ export default function LocalGalleryView() {
           <p className="text-xl text-black">
             {filter === 'all' 
               ? 'Brak plików. Dodaj jakieś pliki!' 
-              : `Brak plików typu ${filter === 'photo' ? 'zdjęcie' : filter === 'video' ? 'wideo' : 'audio'}.`}
+              : `Brak plików typu ${filter === 'photo' ? 'zdjęcie' : 'wideo'}.`}
           </p>
         </div>
       ) : (
