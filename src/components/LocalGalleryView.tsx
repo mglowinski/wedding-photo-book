@@ -191,20 +191,23 @@ export default function LocalGalleryView() {
     <div>
       {/* Image Modal */}
       {modalImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" onClick={closeImageModal}>
-          <div className="relative max-w-5xl max-h-[90vh] w-full mx-2 sm:mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-2 sm:p-4" onClick={closeImageModal}>
+          <div className="relative w-full max-w-5xl flex items-center justify-center">
             <button 
-              className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black bg-opacity-50 text-white p-1.5 sm:p-2 rounded-full hover:bg-opacity-70 z-10"
-              onClick={closeImageModal}
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black bg-opacity-60 text-white p-1.5 sm:p-2 rounded-full hover:bg-opacity-80 z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeImageModal();
+              }}
             >
               <FiX size={20} className="sm:hidden" />
               <FiX size={24} className="hidden sm:block" />
             </button>
             
-            <div className="bg-white p-3 sm:p-4 rounded-lg shadow-lg max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white p-3 sm:p-4 rounded-lg shadow-lg overflow-auto w-full h-full max-h-[90vh] sm:h-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center mb-2 sm:mb-3">
                 <FiUser className="text-gray-400 mr-1 sm:mr-1.5" />
-                <h3 className="font-medium text-black text-sm sm:text-base">{modalImage.name}</h3>
+                <h3 className="font-medium text-black text-sm sm:text-base truncate">{modalImage.name}</h3>
               </div>
               
               {modalImage.message && (
@@ -214,11 +217,11 @@ export default function LocalGalleryView() {
                 </div>
               )}
               
-              <div className="mb-3 sm:mb-4">
+              <div className="mb-3 sm:mb-4 flex items-center justify-center">
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="w-full h-auto max-h-[60vh] sm:max-h-[70vh] object-contain rounded-md"
+                  className="max-w-full max-h-[50vh] sm:max-h-[65vh] md:max-h-[70vh] object-contain rounded-md"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
