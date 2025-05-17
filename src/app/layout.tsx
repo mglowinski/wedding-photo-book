@@ -1,7 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Montserrat } from 'next/font/google';
-import PageTransition from '@/components/PageTransition';
 
 const montserrat = Montserrat({ 
   subsets: ['latin', 'latin-ext'],
@@ -27,11 +26,7 @@ export default function RootLayout({
   return (
     <html lang="pl">
       <body className={montserrat.className}>
-        <main className="min-h-screen">
-          <PageTransition>
-            {children}
-          </PageTransition>
-        </main>
+        <main className="min-h-screen">{children}</main>
       </body>
     </html>
   );
