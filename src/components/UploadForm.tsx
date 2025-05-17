@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiUpload, FiImage, FiVideo, FiCheck, FiAlertCircle, FiX } from 'react-icons/fi';
+import { FiUpload, FiImage, FiVideo, FiCheck, FiAlertCircle, FiX, FiCamera } from 'react-icons/fi';
 
-type MediaType = 'photo' | 'video';
+type MediaType = 'media';
 type StorageType = 'local' | 's3';
 
 interface FileWithPreview extends File {
@@ -18,7 +18,6 @@ interface FileWithPreview extends File {
 export default function UploadForm() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<MediaType>('photo');
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -53,45 +52,15 @@ export default function UploadForm() {
 
   const allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
-
-  const handleTabChange = (newTab: MediaType) => {
-    if (activeTab !== newTab) {
-      // Reset files when changing tabs
-      files.forEach(file => {
-        if (file.preview) URL.revokeObjectURL(file.preview);
-      });
-      setFiles([]);
-      setError('');
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      
-      // Set new active tab
-      setActiveTab(newTab);
-    }
-  };
-
-  const getAllowedTypes = () => {
-    switch (activeTab) {
-      case 'photo':
-        return allowedPhotoTypes;
-      case 'video':
-        return allowedVideoTypes;
-      default:
-        return [];
-    }
-  };
+  const allowedMediaTypes = [...allowedPhotoTypes, ...allowedVideoTypes];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const allowedTypes = getAllowedTypes();
       const selectedFiles = Array.from(e.target.files);
       
       // Check file types and add preview for images
       const newFiles = selectedFiles.map(file => {
-        const isValidType = allowedTypes.includes(file.type);
+        const isValidType = allowedMediaTypes.includes(file.type);
         const fileWithPreview: FileWithPreview = Object.assign(file, {
           id: crypto.randomUUID(),
           progress: 0,
@@ -127,6 +96,15 @@ export default function UploadForm() {
     });
   };
 
+  const determineMediaFolder = (file: File): string => {
+    if (allowedPhotoTypes.includes(file.type)) {
+      return 'photo';
+    } else if (allowedVideoTypes.includes(file.type)) {
+      return 'video';
+    }
+    return 'media';
+  };
+
   const uploadToS3 = async () => {
     if (files.length === 0) {
       setError('Proszę wybrać pliki do przesłania');
@@ -155,6 +133,9 @@ export default function UploadForm() {
         updatedFiles[fileIndex].progress = 5;
         setFiles([...updatedFiles]);
         
+        // Determine folder based on file type
+        const folder = determineMediaFolder(file);
+        
         // Step 1: Get a presigned upload URL from our API
         const urlResponse = await fetch('/api/generate-upload-url', {
           method: 'POST',
@@ -162,7 +143,7 @@ export default function UploadForm() {
           body: JSON.stringify({
             fileType: file.type,
             fileName: file.name,
-            folder: activeTab
+            folder: folder
           })
         });
         
@@ -197,7 +178,7 @@ export default function UploadForm() {
           body: JSON.stringify({
             url: fileUrl,
             key: key,
-            type: activeTab,
+            type: folder,
             fileName: file.name,
             createdAt: new Date().toISOString()
           })
@@ -262,10 +243,13 @@ export default function UploadForm() {
         updatedFiles[fileIndex].progress = 10;
         setFiles([...updatedFiles]);
         
+        // Determine folder based on file type
+        const folder = determineMediaFolder(file);
+        
         // Upload using the local upload endpoint
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('folder', activeTab);
+        formData.append('folder', folder);
         
         updatedFiles[fileIndex].progress = 30;
         setFiles([...updatedFiles]);
@@ -357,27 +341,12 @@ export default function UploadForm() {
 
   return (
     <div>
-      <div className="flex flex-wrap border-b mb-6">
-        <button
-          onClick={() => handleTabChange('photo')}
-          className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
-            activeTab === 'photo'
-              ? 'text-primary border-b-2 border-primary'
-              : 'text-black hover:text-primary'
-          }`}
-        >
-          <FiImage className="mr-1 sm:mr-2" /> Zdjęcia
-        </button>
-        <button
-          onClick={() => handleTabChange('video')}
-          className={`flex items-center justify-center py-3 px-2 sm:px-4 text-sm sm:text-base font-medium flex-1 ${
-            activeTab === 'video'
-              ? 'text-primary border-b-2 border-primary'
-              : 'text-black hover:text-primary'
-          }`}
-        >
-          <FiVideo className="mr-1 sm:mr-2" /> Wideo
-        </button>
+      <div className="bg-gray-100 p-4 rounded-lg mb-6">
+        <div className="flex items-center">
+          <FiCamera className="text-primary mr-2 text-2xl flex-shrink-0" />
+          <h2 className="text-xl font-semibold text-black">Dodaj zdjęcia lub wideo</h2>
+        </div>
+        <p className="text-sm text-gray-600 mt-2 ml-8">Dozwolone formaty: JPG, PNG, GIF, WEBP, MP4, WEBM, MOV</p>
       </div>
 
       {success ? (
@@ -389,9 +358,6 @@ export default function UploadForm() {
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
-            <label className="block text-black font-medium mb-2">
-              Dodaj {activeTab === 'photo' ? 'zdjęcia' : 'wideo'}
-            </label>
             <div
               className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center ${
                 files.length > 0 ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary'
@@ -403,7 +369,7 @@ export default function UploadForm() {
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept={getAllowedTypes().join(',')}
+                accept={allowedMediaTypes.join(',')}
                 multiple
               />
               <label
@@ -427,9 +393,7 @@ export default function UploadForm() {
                       Kliknij, aby przesłać lub przeciągnij i upuść
                     </p>
                     <p className="text-xs sm:text-sm text-black mt-1">
-                      {activeTab === 'photo'
-                        ? 'JPG, PNG, GIF, WEBP'
-                        : 'MP4, WEBM, MOV'}
+                      Zdjęcia i wideo
                     </p>
                   </>
                 )}
@@ -460,7 +424,7 @@ export default function UploadForm() {
                       </div>
                     ) : (
                       <div className="w-12 h-12 mr-3 bg-gray-100 flex items-center justify-center rounded">
-                        {activeTab === 'video' ? (
+                        {file.type.startsWith('video/') ? (
                           <FiVideo className="text-gray-500" />
                         ) : (
                           <FiImage className="text-gray-500" />

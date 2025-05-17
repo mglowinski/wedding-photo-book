@@ -1,11 +1,15 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Montserrat } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin', 'latin-ext'] });
+const montserrat = Montserrat({ 
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  variable: '--font-montserrat',
+});
 
 export const metadata: Metadata = {
-  title: '30-te Urodziny Joanny i Macieja',
+  title: '30-te urodziny Asi i Maćka',
   description: 'Cyfrowa księga gości na uroczystość 30-tych urodzin',
   viewport: {
     width: 'device-width',
@@ -21,7 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl">
-      <body className={inter.className}>
+      <body className={montserrat.className}>
         <main className="min-h-screen">{children}</main>
       </body>
     </html>

@@ -1,6 +1,6 @@
 # Digital Guestbook for 30th Birthday Celebration
 
-A web application that allows guests to upload photos, videos, and audio recordings for Joanna & Maciej's 30th birthday celebration.
+A web application that allows guests to upload photos, videos, and audio recordings for Asia & Maciek's 30th birthday celebration.
 
 ## Features
 
