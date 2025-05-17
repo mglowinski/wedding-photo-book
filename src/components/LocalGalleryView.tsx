@@ -220,11 +220,6 @@ export default function LocalGalleryView() {
               
               {/* Info footer */}
               <div className="p-3 sm:p-4 border-t">
-                <div className="mb-2 flex items-center">
-                  <FiUser className="text-gray-400 mr-1.5" />
-                  <h3 className="font-medium text-black text-sm sm:text-base truncate">{modalImage.name}</h3>
-                </div>
-                
                 {modalImage.message && (
                   <div className="mb-3 text-gray-600 flex items-start">
                     <FiMessageCircle className="text-gray-400 mr-1.5 mt-0.5 flex-shrink-0" />
@@ -324,9 +319,8 @@ export default function LocalGalleryView() {
             <div key={index} className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               <div className="p-3 sm:p-4">
                 <div className="flex justify-between items-start mb-2 sm:mb-3">
-                  <div className="flex items-center max-w-[65%]">
-                    <FiUser className="text-gray-400 mr-1 sm:mr-1.5 flex-shrink-0" />
-                    <h4 className="font-medium text-black text-sm sm:text-base truncate">{file.name}</h4>
+                  <div className="text-xs font-medium text-black">
+                    {formatDate(file.createdAt)}
                   </div>
                   <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                     <span className="text-xs bg-gray-100 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">

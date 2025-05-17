@@ -247,7 +247,6 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
           url: file.url,
           key: file.key,
           type: file.type,
-          name: 'Użytkownik', // Default name
           fileName: file.key.split('/').pop() || 'plik',
           createdAt: new Date(file.lastModified || new Date()).toISOString()
         });
