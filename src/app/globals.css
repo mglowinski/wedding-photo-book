@@ -20,7 +20,7 @@ body {
   min-height: 100vh;
   font-family: var(--font-montserrat);
   background-image: url('/images/background.png');
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.2);
   background-blend-mode: multiply;
   background-size: cover;
   background-position: center;
