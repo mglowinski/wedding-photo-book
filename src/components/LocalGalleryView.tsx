@@ -333,116 +333,119 @@ export default function LocalGalleryView() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredFiles.map((file, index) => (
-            <div key={index} className="bg-white border rounded-xl overflow-hidden shadow hover:shadow-md transition-all hover:-translate-y-1 duration-300">
-              {file.type === 'photo' && (
-                <div 
-                  className="relative aspect-[4/3] overflow-hidden cursor-pointer"
-                  onClick={() => openImageModal(file)}
-                >
-                  <img
-                    src={file.url}
-                    alt={file.fileName || 'Zdjęcie'}
-                    className="object-cover w-full h-full transition-transform duration-500 hover:scale-105"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.style.display = 'none';
-                      // Replace with an inline error indicator
-                      const container = target.parentElement;
-                      if (container) {
-                        const errorDiv = document.createElement('div');
-                        errorDiv.className = 'flex flex-col items-center justify-center bg-gray-100 w-full h-full';
-                        errorDiv.innerHTML = `
-                          <div class="text-red-500 mb-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle">
-                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                              <line x1="12" y1="9" x2="12" y2="13"></line>
-                              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                            </svg>
-                          </div>
-                          <p class="text-gray-700 text-sm">Błąd obrazu</p>
-                        `;
-                        container.appendChild(errorDiv);
-                      }
-                      console.error('Error loading image:', file.url);
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end justify-between p-3">
-                    <span className="text-white font-medium text-sm">Zobacz</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(file.url, file.fileName || '');
-                      }}
-                      className="text-white hover:text-primary bg-black/30 p-1.5 rounded-full"
-                    >
-                      <FiDownload size={16} />
-                    </button>
+            <div key={index} className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-3 sm:p-4">
+                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                  <div className="flex items-center max-w-[65%]">
+                    <FiUser className="text-gray-400 mr-1 sm:mr-1.5 flex-shrink-0" />
+                    <h4 className="font-medium text-black text-sm sm:text-base truncate">{file.name}</h4>
                   </div>
-                </div>
-              )}
-              
-              {file.type === 'video' && (
-                <div className="relative aspect-video overflow-hidden">
-                  <video 
-                    controls 
-                    className="w-full h-full object-cover"
-                    src={file.url}
-                  >
-                    Twoja przeglądarka nie obsługuje odtwarzania wideo.
-                  </video>
-                  <div className="absolute top-2 right-2">
-                    <button
-                      onClick={() => handleDownload(file.url, file.fileName || '')}
-                      className="bg-black/50 text-white p-1.5 rounded-full hover:bg-black/70"
-                    >
-                      <FiDownload size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {file.type === 'audio' && (
-                <div className="p-3 bg-gray-50">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-medium bg-gray-200 text-black px-2 py-0.5 rounded-full">
-                      Audio
+                  <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                    <span className="text-xs bg-gray-100 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+                      {file.type === 'photo' 
+                        ? 'zdjęcie' 
+                        : file.type === 'video' 
+                          ? 'wideo' 
+                          : file.type === 'audio' 
+                            ? 'audio' 
+                            : file.type}
                     </span>
-                    <button
-                      onClick={() => handleDownload(file.url, file.fileName || '')}
-                      className="text-primary p-1"
-                    >
-                      <FiDownload size={14} />
-                    </button>
                   </div>
-                  <audio 
-                    controls 
-                    className="w-full mt-1"
-                    src={file.url}
-                  >
-                    Twoja przeglądarka nie obsługuje odtwarzania audio.
-                  </audio>
                 </div>
-              )}
-              
-              {file.type === 'other' && (
-                <div className="p-4 bg-gray-50 text-center">
-                  <a 
-                    href={file.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Zobacz plik
-                  </a>
+
+                {file.message && (
+                  <div className="mb-2 sm:mb-3 text-xs sm:text-sm text-gray-600 flex items-start">
+                    <FiMessageCircle className="text-gray-400 mr-1 sm:mr-1.5 mt-0.5 flex-shrink-0" />
+                    <p className="line-clamp-2">{file.message}</p>
+                  </div>
+                )}
+
+                <div className="mb-3 sm:mb-4">
+                  {file.type === 'photo' && (
+                    <div 
+                      className="relative w-full h-36 sm:h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
+                      onClick={() => openImageModal(file)}
+                    >
+                      <img
+                        src={file.url}
+                        alt={file.fileName || 'Zdjęcie'}
+                        className="object-cover w-full h-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.style.display = 'none';
+                          // Replace with an inline error indicator
+                          const container = target.parentElement;
+                          if (container) {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'flex flex-col items-center justify-center bg-gray-100 w-full h-full rounded-md';
+                            errorDiv.innerHTML = `
+                              <div class="text-red-500 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle">
+                                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                              </div>
+                              <p class="text-gray-700 text-sm">Błąd obrazu</p>
+                            `;
+                            container.appendChild(errorDiv);
+                          }
+                          console.error('Error loading image:', file.url);
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity flex items-center justify-center">
+                        <span className="text-white font-medium">Zobacz</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {file.type === 'video' && (
+                    <video 
+                      controls 
+                      className="w-full rounded-md"
+                      src={file.url}
+                    >
+                      Twoja przeglądarka nie obsługuje odtwarzania wideo.
+                    </video>
+                  )}
+                  
+                  {file.type === 'audio' && (
+                    <audio 
+                      controls 
+                      className="w-full"
+                      src={file.url}
+                    >
+                      Twoja przeglądarka nie obsługuje odtwarzania audio.
+                    </audio>
+                  )}
+                  
+                  {file.type === 'other' && (
+                    <div className="text-center p-4 bg-gray-50 rounded-md">
+                      <a 
+                        href={file.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Zobacz plik
+                      </a>
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              <div className="p-3">
-                <div className="text-xs text-gray-500">
-                  {formatDate(file.createdAt)}
+                
+                <div className="flex justify-between items-center">
+                  <div className="text-xs text-gray-500 truncate max-w-[65%]">
+                    {formatDate(file.createdAt)}
+                  </div>
+                  <button
+                    onClick={() => handleDownload(file.url, file.fileName || '')}
+                    className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
+                  >
+                    <FiDownload className="mr-1" /> Pobierz
+                  </button>
                 </div>
               </div>
             </div>
