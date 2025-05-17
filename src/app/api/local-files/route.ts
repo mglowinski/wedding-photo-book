@@ -102,16 +102,19 @@ export async function GET(request: NextRequest) {
     
     // If using S3 storage, get files from S3 metadata
     if (isS3Storage() || process.env.VERCEL) {
-      console.log(`[${currentTime}] Using S3 storage mode with signed URLs`);
+      console.log(`[${currentTime}] Using S3 storage mode with public URLs`);
       
-      // First, sync S3 files with metadata and get signed URLs
-      // Add force=true parameter to explicitly refresh metadata
+      // Get files info - only do a forced sync if explicitly requested
+      // as we're using public URLs that don't expire
       const forcedSync = request.nextUrl.searchParams.get('force') === 'true';
-      console.log(`[${currentTime}] Force sync parameter: ${forcedSync}`);
+      console.log(`[${currentTime}] Force sync parameter: ${forcedSync} (only needed for new files)`);
       
-      await syncS3FilesWithMetadataSignedUrls(forcedSync);
+      // Only sync if force is true (for new files) - no need to refresh URLs anymore
+      if (forcedSync) {
+        await syncS3FilesWithMetadataSignedUrls(false);
+      }
       
-      // Then fetch the metadata which should now include all files with signed URLs
+              // Then fetch the metadata which should now include all files with direct URLs
       const s3Metadata = await getMetadataFromS3();
       console.log(`[${currentTime}] Retrieved ${s3Metadata.length} files from S3 metadata`);
       
@@ -129,7 +132,7 @@ export async function GET(request: NextRequest) {
       
       files = s3Metadata.map((file: S3FileMetadata) => {
         const fileInfo = {
-          url: file.url, // This is now a signed URL
+          url: file.url, // Direct public URL
           key: file.key, // Include the S3 key for deletion
           type: file.type,
           name: file.name,

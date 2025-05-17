@@ -96,10 +96,8 @@ export default function LocalGalleryView() {
 
   // Load files on component mount
   useEffect(() => {
-    // Load files when the component mounts
-    fetchFiles(true);
-    
-    // No need for refresh interval as we're using public direct URLs now
+    // Load files when the component mounts - no need to force refresh with public URLs
+    fetchFiles(false);
   }, []);
 
   // Filter files based on selected filter
