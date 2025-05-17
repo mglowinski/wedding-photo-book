@@ -191,42 +191,33 @@ export default function LocalGalleryView() {
     <div>
       {/* Image Modal */}
       {modalImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-2 sm:p-4" onClick={closeImageModal}>
-          <div className="relative w-full max-w-5xl flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" onClick={closeImageModal}>
+          <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-4">
             <button 
-              className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black bg-opacity-60 text-white p-1.5 sm:p-2 rounded-full hover:bg-opacity-80 z-10"
+              className="absolute top-3 right-3 sm:top-5 sm:right-5 bg-black bg-opacity-70 text-white p-2 rounded-full hover:bg-opacity-90 z-10"
               onClick={(e) => {
                 e.stopPropagation();
                 closeImageModal();
               }}
             >
-              <FiX size={20} className="sm:hidden" />
-              <FiX size={24} className="hidden sm:block" />
+              <FiX size={24} />
             </button>
             
-            <div className="bg-white p-3 sm:p-4 rounded-lg shadow-lg overflow-auto w-full h-full max-h-[90vh] sm:h-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center mb-2 sm:mb-3">
-                <FiUser className="text-gray-400 mr-1 sm:mr-1.5" />
-                <h3 className="font-medium text-black text-sm sm:text-base truncate">{modalImage.name}</h3>
-              </div>
-              
-              {modalImage.message && (
-                <div className="mb-3 sm:mb-4 text-gray-600 flex items-start">
-                  <FiMessageCircle className="text-gray-400 mr-1 sm:mr-1.5 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs sm:text-sm">{modalImage.message}</p>
-                </div>
-              )}
-              
-              <div className="mb-3 sm:mb-4 flex items-center justify-center">
+            <div 
+              className="bg-white rounded-lg shadow-lg overflow-hidden max-w-[95%] max-h-[90%] sm:max-w-[90%] md:max-w-3xl lg:max-w-4xl w-auto h-auto flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Image container with fixed aspect ratio */}
+              <div className="relative overflow-hidden p-2 sm:p-4 flex-grow flex items-center justify-center">
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-w-full max-h-[50vh] sm:max-h-[65vh] md:max-h-[70vh] object-contain rounded-md"
+                  className="max-h-[70vh] max-w-full object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
                     target.style.display = 'none';
-                    // Replace with an inline error indicator instead of loading another image
+                    // Replace with an inline error indicator
                     const container = target.parentElement;
                     if (container) {
                       const errorDiv = document.createElement('div');
@@ -248,11 +239,24 @@ export default function LocalGalleryView() {
                 />
               </div>
               
-              <div className="flex justify-between items-center">
-                <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[45%]">
-                  {formatDate(modalImage.createdAt)}
+              {/* Info footer */}
+              <div className="p-3 sm:p-4 border-t">
+                <div className="mb-2 flex items-center">
+                  <FiUser className="text-gray-400 mr-1.5" />
+                  <h3 className="font-medium text-black text-sm sm:text-base truncate">{modalImage.name}</h3>
                 </div>
-                <div className="flex space-x-2 sm:space-x-3">
+                
+                {modalImage.message && (
+                  <div className="mb-3 text-gray-600 flex items-start">
+                    <FiMessageCircle className="text-gray-400 mr-1.5 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs sm:text-sm">{modalImage.message}</p>
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center">
+                  <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[45%]">
+                    {formatDate(modalImage.createdAt)}
+                  </div>
                   <button
                     onClick={() => handleDownload(modalImage.url, modalImage.fileName || '')}
                     className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
