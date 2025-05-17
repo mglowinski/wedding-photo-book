@@ -10,6 +10,7 @@ module.exports = {
     'backdrop-blur-sm',
     'bg-white/90',
     'bg-white/70',
+    'bg-white/60',
     'bg-white/50',
     'bg-primary-dark',
     'bg-primary-dark/90',

@@ -17,7 +17,7 @@ export default function Home() {
           </p>
         </header>
 
-        <div className="max-w-3xl mx-auto bg-white/50 rounded-2xl shadow-xl overflow-hidden mb-12 backdrop-blur-sm">
+        <div className="max-w-3xl mx-auto bg-white/60 rounded-2xl shadow-xl overflow-hidden mb-12 backdrop-blur-sm">
           <div className="p-8 text-center">
             <h3 className="text-2xl font-semibold text-black mb-4">Podziel się wspomnieniami</h3>
             <p className="text-lg text-black mb-6">

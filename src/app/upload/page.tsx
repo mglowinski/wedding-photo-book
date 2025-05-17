@@ -11,7 +11,7 @@ export default function UploadPage() {
           </Link>
         </div>
         
-        <div className="max-w-3xl mx-auto bg-white/50 backdrop-blur-sm rounded-lg sm:rounded-2xl shadow-xl overflow-hidden">
+        <div className="max-w-3xl mx-auto bg-white/60 backdrop-blur-sm rounded-lg sm:rounded-2xl shadow-xl overflow-hidden">
           <div className="p-4 sm:p-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-black text-center mb-4 sm:mb-6">Podziel się wspomnieniami</h2>
             <UploadForm />
