@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiUpload, FiImage, FiVideo, FiMic, FiCheck, FiAlertCircle, FiX } from 'react-icons/fi';
+import { FiUpload, FiImage, FiVideo, FiCheck, FiAlertCircle, FiX } from 'react-icons/fi';
 
 type MediaType = 'photo' | 'video';
 type StorageType = 'local' | 's3';
@@ -20,8 +20,6 @@ export default function UploadForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<MediaType>('photo');
   const [files, setFiles] = useState<FileWithPreview[]>([]);
-  const [name, setName] = useState('');
-  const [message, setMessage] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -200,8 +198,6 @@ export default function UploadForm() {
             url: fileUrl,
             key: key,
             type: activeTab,
-            name,
-            message,
             fileName: file.name,
             createdAt: new Date().toISOString()
           })
@@ -270,8 +266,6 @@ export default function UploadForm() {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', activeTab);
-        formData.append('name', name);
-        formData.append('message', message);
         
         updatedFiles[fileIndex].progress = 30;
         setFiles([...updatedFiles]);
@@ -348,8 +342,6 @@ export default function UploadForm() {
         // Reset form after 2 seconds
         setTimeout(() => {
           setFiles([]);
-          setName('');
-          setMessage('');
           setSuccess(false);
           router.push('/');
         }, 2000);
@@ -396,34 +388,6 @@ export default function UploadForm() {
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="name" className="block text-black font-medium mb-2 text-sm sm:text-base">
-              Twoje imię (opcjonalnie)
-            </label>
-            <input
-              type="text"
-              id="name"
-              className="w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black text-sm sm:text-base"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Wpisz swoje imię"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="message" className="block text-black font-medium mb-2 text-sm sm:text-base">
-              Wiadomość (opcjonalnie)
-            </label>
-            <textarea
-              id="message"
-              className="w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black text-sm sm:text-base"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Dodaj wiadomość lub życzenia"
-              rows={3}
-            />
-          </div>
-
           <div className="mb-6">
             <label className="block text-black font-medium mb-2">
               Dodaj {activeTab === 'photo' ? 'zdjęcia' : 'wideo'}

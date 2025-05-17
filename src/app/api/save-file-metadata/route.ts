@@ -28,11 +28,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Brakuje wymaganych pól' }, { status: 400 });
     }
     
-    // Set default name if none provided
-    if (!fileData.name || fileData.name.trim() === '') {
-      fileData.name = 'Anonim';
-    }
-    
     // Extract S3 key from the URL if using S3
     if (isS3Storage() || process.env.VERCEL) {
       // Get the key part from the URL - remove any query parameters

@@ -20,11 +20,9 @@ try {
 // Type for metadata entries
 interface MediaItem {
   id: string;
-  name: string;
-  message: string;
   fileURL: string;
   fileName: string;
-  fileType: 'photo' | 'video' | 'audio';
+  fileType: 'photo' | 'video';
   mimeType: string;
   createdAt: string;
 }
@@ -64,15 +62,11 @@ export async function POST(request: NextRequest) {
     }
     
     const folder = (formData.get('folder') as string) || 'uploads';
-    const name = formData.get('name') as string || '';
-    const message = formData.get('message') as string || '';
     
     console.log('Local upload request received:', {
       filename: file.name,
       type: file.type,
-      size: file.size,
-      name,
-      message
+      size: file.size
     });
     
     // Generate unique filename
@@ -101,13 +95,11 @@ export async function POST(request: NextRequest) {
     console.log('Public URL:', publicUrl);
     
     // Update metadata
-    const fileType = folder as 'photo' | 'video' | 'audio';
+    const fileType = folder as 'photo' | 'video';
     const metadata = readMetadata();
     
     const newItem: MediaItem = {
       id: Date.now().toString(),
-      name,
-      message,
       fileURL: publicUrl,
       fileName: file.name,
       fileType,
