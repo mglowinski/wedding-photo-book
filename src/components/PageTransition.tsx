@@ -20,7 +20,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
       const timeout = setTimeout(() => {
         setDisplayChildren(children);
         setIsTransitioning(false);
-      }, 200); // Faster transition
+      }, 100); // Very quick transition
       return () => clearTimeout(timeout);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -28,10 +28,8 @@ export default function PageTransition({ children }: PageTransitionProps) {
 
   return (
     <div
-      className={`transition-all duration-150 ease-in-out ${
-        isTransitioning 
-          ? 'opacity-0 transform translate-x-2' 
-          : 'opacity-100 transform translate-x-0'
+      className={`transition-opacity duration-100 ease-in-out ${
+        isTransitioning ? 'opacity-0' : 'opacity-100'
       }`}
     >
       {displayChildren}
