@@ -11,6 +11,10 @@ const s3Client = new S3Client({
   },
 });
 
+// Define S3 bucket and region for reuse
+const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
+const region = process.env.AWS_REGION || 'eu-central-1';
+
 export interface UploadUrlResult {
   uploadUrl: string;
   fileUrl: string;
@@ -33,7 +37,7 @@ export async function generateUploadUrl(
   
   // Create the command for putting an object in S3
   const putObjectCommand = new PutObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+    Bucket: bucket,
     Key: uniqueFileName,
     ContentType: fileType,
   });
@@ -41,8 +45,8 @@ export async function generateUploadUrl(
   // Generate a signed URL that's valid for 10 minutes
   const uploadUrl = await getSignedUrl(s3Client, putObjectCommand, { expiresIn: 600 });
   
-  // Generate the final public URL for the file
-  const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uniqueFileName}`;
+  // Generate the direct public URL for the file (S3 bucket is set to allow public access)
+  const fileUrl = `https://${bucket}.s3.${region}.amazonaws.com/${uniqueFileName}`;
   
   return {
     uploadUrl,
@@ -62,7 +66,7 @@ export async function saveMetadataToS3(data: any): Promise<boolean> {
     let existingData = [];
     try {
       const getCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+        Bucket: bucket,
         Key: metadataFile,
       });
       
@@ -81,7 +85,7 @@ export async function saveMetadataToS3(data: any): Promise<boolean> {
     
     // Upload updated metadata file
     const putCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+      Bucket: bucket,
       Key: metadataFile,
       Body: JSON.stringify(existingData, null, 2),
       ContentType: 'application/json',
@@ -104,7 +108,7 @@ export async function getMetadataFromS3(): Promise<any[]> {
     console.log(`Attempting to get metadata from S3: ${metadataFile}`);
     
     const getCommand = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+      Bucket: bucket,
       Key: metadataFile,
     });
     
@@ -129,38 +133,21 @@ export async function getMetadataFromS3(): Promise<any[]> {
 }
 
 /**
- * Generates a pre-signed URL for viewing an S3 object
- * This creates temporary access to a private object
+ * Generates a direct URL for accessing an S3 object
+ * NOTE: This assumes the S3 bucket has been configured to allow public read access
  */
 export async function generateViewUrl(key: string): Promise<string> {
-  try {
-    const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
-    
-    // Create the command for getting an object from S3
-    const command = new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    });
-    
-    // Generate a signed URL that's valid for 24 hours (86400 seconds)
-    return await getSignedUrl(s3Client, command, { expiresIn: 86400 });
-  } catch (error) {
-    console.error('Error generating view URL:', error);
-    // Return a direct S3 URL as fallback (might not work if bucket is private)
-    const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
-    const region = process.env.AWS_REGION || 'eu-central-1';
-    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-  }
+  // Return direct S3 URL - no need for signed URLs as the bucket is now public
+  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 }
 
 /**
- * Lists all files in the S3 bucket with presigned URLs
+ * Lists all files in the S3 bucket with direct URLs (no presigned URLs needed)
+ * NOTE: This assumes the S3 bucket has been configured to allow public read access
  */
 export async function listS3FilesWithSignedUrls(): Promise<any[]> {
   try {
-    const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
-    const region = process.env.AWS_REGION || 'eu-central-1';
-    console.log(`Attempting to list files in S3 bucket: ${bucket}, region: ${region}`);
+    console.log(`Listing files in S3 bucket: ${bucket}, region: ${region}`);
     
     const files: any[] = [];
     let continuationToken: string | undefined = undefined;
@@ -198,14 +185,14 @@ export async function listS3FilesWithSignedUrls(): Promise<any[]> {
                 type = 'audio';
               }
               
-              // Generate a pre-signed URL for viewing the file
-              const signedUrl = await generateViewUrl(item.Key);
+              // Use direct URL - no need for presigned URLs as the bucket is now public
+              const directUrl = `https://${bucket}.s3.${region}.amazonaws.com/${item.Key}`;
               
-              console.log(`Adding file: ${signedUrl} (${type})`);
+              console.log(`Adding file: ${directUrl} (${type})`);
               
               // Create file entry
               files.push({
-                url: signedUrl,
+                url: directUrl,
                 key: item.Key,
                 type,
                 lastModified: item.LastModified,
@@ -233,13 +220,14 @@ export async function listS3FilesWithSignedUrls(): Promise<any[]> {
 }
 
 /**
- * Ensures that all files in S3 bucket are in the metadata with signed URLs
+ * Ensures that all files in S3 bucket are in the metadata with direct URLs
+ * NOTE: No URL refreshing needed as we're using public direct URLs now
  */
 export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = false): Promise<boolean> {
   try {
-    console.log(`Starting metadata sync with signed URLs... Force refresh: ${forceRefresh}`);
+    console.log(`Starting metadata sync... Force refresh parameter: ${forceRefresh} (ignored since using direct URLs)`);
     
-    // Get all files from S3 with signed URLs
+    // Get all files from S3 with direct URLs
     const s3Files = await listS3FilesWithSignedUrls();
     console.log(`Found ${s3Files.length} files in S3 bucket`);
     
@@ -249,7 +237,7 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
     
     try {
       const getCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+        Bucket: bucket,
         Key: metadataFile,
       });
       
@@ -264,10 +252,9 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
       console.log('Metadata file not found, creating new one');
     }
     
-    // Update all files with fresh signed URLs
+    // Update all files with proper direct URLs
     let updatedCount = 0;
     let newCount = 0;
-    const now = new Date().getTime();
     
     for (const file of s3Files) {
       const existingIndex = metadata.findIndex((item: any) => 
@@ -276,25 +263,12 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
       );
       
       if (existingIndex >= 0) {
-        // Calculate time since last refresh (if available)
-        let shouldRefresh = forceRefresh;
-        if (!shouldRefresh && metadata[existingIndex].lastRefreshed) {
-          const lastRefreshTime = new Date(metadata[existingIndex].lastRefreshed).getTime();
-          const hoursSinceRefresh = (now - lastRefreshTime) / (1000 * 60 * 60);
-          // Refresh if URL is more than 12 hours old (URLs expire after 24 hours)
-          shouldRefresh = hoursSinceRefresh > 12;
-          
-          if (shouldRefresh) {
-            console.log(`URL for ${file.key} is ${hoursSinceRefresh.toFixed(1)} hours old, refreshing`);
-          }
-        }
-        
-        // If forceRefresh is true or URL is missing/expiring soon, update
-        if (shouldRefresh || !metadata[existingIndex].url) {
-          // Update URL but keep other metadata
+        // Update URL to direct URL if it's a signed URL or missing
+        const currentUrl = metadata[existingIndex].url || '';
+        if (currentUrl.includes('X-Amz-Signature') || !currentUrl) {
+          // Replace signed URL with direct URL
           metadata[existingIndex].url = file.url;
           metadata[existingIndex].key = file.key; // Add key if missing
-          metadata[existingIndex].lastRefreshed = new Date().toISOString();
           updatedCount++;
         }
       } else {
@@ -303,11 +277,9 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
           url: file.url,
           key: file.key,
           type: file.type,
-          name: 'Unknown',
-          message: '',
+          name: '', // No name needed
           fileName: file.key.split('/').pop() || '',
-          createdAt: file.lastModified || new Date().toISOString(),
-          lastRefreshed: new Date().toISOString()
+          createdAt: file.lastModified || new Date().toISOString()
         });
         newCount++;
       }
@@ -321,15 +293,13 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
       console.log(`Metadata entry ${index + 1}:`, {
         key: item.key,
         type: item.type,
-        name: item.name,
-        url: item.url ? item.url.substring(0, 50) + '...' : 'null',
-        lastRefreshed: item.lastRefreshed || 'unknown'
+        url: item.url ? item.url.substring(0, 50) + '...' : 'null'
       });
     });
     
     // Save updated metadata
     const putCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
+      Bucket: bucket,
       Key: metadataFile,
       Body: JSON.stringify(metadata, null, 2),
       ContentType: 'application/json',
@@ -345,95 +315,10 @@ export async function syncS3FilesWithMetadataSignedUrls(forceRefresh: boolean = 
 }
 
 /**
- * Original function - kept for backward compatibility
- * Ensures that all files in S3 bucket are in the metadata
- * If files are found without metadata, adds basic metadata for them
- */
-export async function syncS3FilesWithMetadata(): Promise<boolean> {
-  try {
-    console.log('Starting metadata sync...');
-    
-    // Get all files from S3
-    const s3Files = await listS3Files();
-    console.log(`Found ${s3Files.length} files in S3 bucket`);
-    
-    // Get existing metadata
-    const metadataFile = 'metadata/files.json';
-    let metadata = [];
-    
-    try {
-      const getCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
-        Key: metadataFile,
-      });
-      
-      const response = await s3Client.send(getCommand);
-      const bodyContents = await response.Body?.transformToString();
-      if (bodyContents) {
-        metadata = JSON.parse(bodyContents);
-        console.log(`Loaded existing metadata with ${metadata.length} entries`);
-      }
-    } catch (error) {
-      // If metadata file doesn't exist, that's okay
-      console.log('Metadata file not found, creating new one');
-    }
-    
-    // Update metadata with any missing files
-    let updatedCount = 0;
-    let newCount = 0;
-    
-    for (const file of s3Files) {
-      // More robust matching using key or filename
-      const existingIndex = metadata.findIndex((item: any) => 
-        item.key === file.key || 
-        (item.url && item.url.includes(file.key.split('/').pop()))
-      );
-      
-      if (existingIndex >= 0) {
-        // Update URL but keep other metadata
-        metadata[existingIndex].url = file.url;
-        metadata[existingIndex].key = file.key; // Add key if missing
-        updatedCount++;
-      } else {
-        // Add new file with basic metadata
-        metadata.push({
-          url: file.url,
-          key: file.key,
-          type: file.type,
-          name: 'Unknown',
-          message: '',
-          fileName: file.key.split('/').pop() || '',
-          createdAt: file.lastModified || new Date().toISOString()
-        });
-        newCount++;
-      }
-    }
-    
-    console.log(`Metadata sync results: ${updatedCount} updated, ${newCount} new files`);
-    
-    // Save updated metadata
-    const putCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files',
-      Key: metadataFile,
-      Body: JSON.stringify(metadata, null, 2),
-      ContentType: 'application/json',
-    });
-    
-    await s3Client.send(putCommand);
-    return true;
-  } catch (error) {
-    console.error('Error syncing S3 files with metadata:', error);
-    return false;
-  }
-}
-
-/**
- * Lists all files in the S3 bucket
+ * Lists all files in the S3 bucket with direct URLs
  */
 export async function listS3Files(): Promise<any[]> {
   try {
-    const bucket = process.env.AWS_S3_BUCKET_NAME || 'wedding-photo-book-files';
-    const region = process.env.AWS_REGION || 'eu-central-1';
     console.log(`Attempting to list files in S3 bucket: ${bucket}, region: ${region}`);
     
     const files: any[] = [];
@@ -467,7 +352,7 @@ export async function listS3Files(): Promise<any[]> {
                 type = 'audio';
               }
               
-              // Create URL using the correct pattern for S3
+              // Create direct URL using the correct pattern for S3
               const url = `https://${bucket}.s3.${region}.amazonaws.com/${item.Key}`;
               
               // Create file entry

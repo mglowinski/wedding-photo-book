@@ -94,21 +94,12 @@ export default function LocalGalleryView() {
     }
   };
 
-  // Scan the uploads directory on component mount
+  // Load files on component mount
   useEffect(() => {
-    // Automatically refresh S3 URLs when the component loads to ensure we have fresh URLs
+    // Load files when the component mounts
     fetchFiles(true);
     
-    // Set up a refresh interval to ensure S3 URLs stay fresh
-    // This prevents 403 errors by refreshing URLs before they expire (24 hours)
-    const refreshInterval = setInterval(() => {
-      console.log('Automatic S3 URL refresh triggered by interval');
-      fetchFiles(true);
-    }, 4 * 60 * 60 * 1000); // Refresh every 4 hours
-
-    return () => {
-      clearInterval(refreshInterval);
-    };
+    // No need for refresh interval as we're using public direct URLs now
   }, []);
 
   // Filter files based on selected filter
