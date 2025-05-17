@@ -16,7 +16,24 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  background-image: url('/images/background.png');
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  /* Add a dark overlay to make text more readable */
+  background-color: rgba(0, 0, 0, 0.35);
+  background-blend-mode: multiply;
+  font-family: var(--font-montserrat);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-montserrat);
+  font-weight: 600;
+}
+
+p, span, a, button, input, textarea {
+  font-family: var(--font-montserrat);
 }
 
 /* Make placeholders darker */

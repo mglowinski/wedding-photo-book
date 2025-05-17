@@ -5,13 +5,22 @@ module.exports = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    'bg-opacity-90',
+    'backdrop-blur-sm',
+    'bg-white/90',
+  ],
   theme: {
     extend: {
       colors: {
-        primary: '#4F46E5',
-        secondary: '#EC4899',
+        primary: '#D53F8C',
+        secondary: '#ED64A6',
         dark: '#111827',
         light: '#F9FAFB',
+      },
+      fontFamily: {
+        sans: ['var(--font-montserrat)'],
+        montserrat: ['var(--font-montserrat)'],
       },
     },
   },

@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     domains: [],
+    unoptimized: true,
   },
   webpack: (config) => {
     // This is to handle the 'fs' module error

@@ -25,7 +25,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl">
-      <body className={montserrat.className}>
+      <body 
+        className={montserrat.className}
+        style={{
+          backgroundImage: "url('/images/background.png')",
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+          backgroundAttachment: "fixed",
+          backgroundRepeat: "no-repeat",
+          backgroundColor: "rgba(0, 0, 0, 0.35)",
+          backgroundBlendMode: "multiply",
+        }}
+      >
         <main className="min-h-screen">{children}</main>
       </body>
     </html>
