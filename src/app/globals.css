@@ -14,8 +14,9 @@
   }
 }
 
-/* Fixed background container */
-.fixed-bg {
+/* Fixed background technique using body background */
+body::before {
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
@@ -28,6 +29,7 @@
   background-repeat: no-repeat;
   background-color: rgba(0, 0, 0, 0.2);
   background-blend-mode: multiply;
+  pointer-events: none;
 }
 
 body {

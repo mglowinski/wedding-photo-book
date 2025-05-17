@@ -26,7 +26,6 @@ export default function RootLayout({
   return (
     <html lang="pl">
       <body className={montserrat.className}>
-        <div className="fixed-bg"></div>
         <main className="min-h-screen">{children}</main>
       </body>
     </html>
