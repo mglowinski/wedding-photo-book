@@ -24,6 +24,7 @@ export default function LocalGalleryView() {
   const [filter, setFilter] = useState<Filter>('all');
   const [modalImage, setModalImage] = useState<LocalFile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   // Function to determine file type based on URL
   const determineFileType = (url: string): FileType => {
@@ -85,13 +86,50 @@ export default function LocalGalleryView() {
     : files.filter(file => file.type === filter);
 
   // Handle file download
-  const handleDownload = (url: string, fileName: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName || url.split('/').pop() || 'download';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (url: string, fileName: string) => {
+    try {
+      // Show temporary download indicator
+      setDownloading(true);
+      
+      // Fetch the file as a blob
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+      
+      // Get the file as a blob
+      const blob = await response.blob();
+      
+      // Create a local object URL for the blob
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element for downloading
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName || 'download';
+      link.style.display = 'none';
+      
+      // Add to DOM, click and clean up
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+        setDownloading(false);
+      }, 100);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Nie udało się pobrać pliku. Spróbuj ponownie.');
+      setDownloading(false);
+    }
   };
 
   // Open image in modal
@@ -233,9 +271,19 @@ export default function LocalGalleryView() {
                   </div>
                   <button
                     onClick={() => handleDownload(modalImage.url, modalImage.fileName || '')}
+                    disabled={downloading}
                     className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
                   >
-                    <FiDownload className="mr-1" /> Pobierz
+                    {downloading ? (
+                      <>
+                        <span className="mr-1.5 w-3 h-3 rounded-full bg-primary animate-pulse"></span>
+                        Pobieranie...
+                      </>
+                    ) : (
+                      <>
+                        <FiDownload className="mr-1" /> Pobierz
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -422,9 +470,19 @@ export default function LocalGalleryView() {
                   </div>
                   <button
                     onClick={() => handleDownload(file.url, file.fileName || '')}
+                    disabled={downloading}
                     className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
                   >
-                    <FiDownload className="mr-1" /> Pobierz
+                    {downloading ? (
+                      <>
+                        <span className="mr-1.5 w-3 h-3 rounded-full bg-primary animate-pulse"></span>
+                        Pobieranie...
+                      </>
+                    ) : (
+                      <>
+                        <FiDownload className="mr-1" /> Pobierz
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
