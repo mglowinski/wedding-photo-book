@@ -33,7 +33,7 @@ export default function RootLayout({
           backgroundSize: "cover",
           backgroundAttachment: "fixed",
           backgroundRepeat: "no-repeat",
-          backgroundColor: "rgba(0, 0, 0, 0.35)",
+          backgroundColor: "rgba(0, 0, 0, 0.2)",
           backgroundBlendMode: "multiply",
         }}
       >

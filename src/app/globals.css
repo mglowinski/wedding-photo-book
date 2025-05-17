@@ -21,8 +21,8 @@ body {
   background-size: cover;
   background-attachment: fixed;
   background-repeat: no-repeat;
-  /* Add a dark overlay to make text more readable */
-  background-color: rgba(0, 0, 0, 0.35);
+  /* Add a light overlay to make text more readable */
+  background-color: rgba(0, 0, 0, 0.2);
   background-blend-mode: multiply;
   font-family: var(--font-montserrat);
 }
