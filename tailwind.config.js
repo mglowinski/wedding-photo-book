@@ -9,6 +9,7 @@ module.exports = {
     'bg-opacity-90',
     'backdrop-blur-sm',
     'bg-white/90',
+    'bg-white/70',
   ],
   theme: {
     extend: {
