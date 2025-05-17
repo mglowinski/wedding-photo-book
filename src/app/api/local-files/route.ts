@@ -196,28 +196,25 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Sort only if not many files, otherwise skip sorting for performance
-    if (files.length < 1000) {
-      // Use more efficient sorting
-      files.sort((a, b) => {
-        // Faster check for missing dates
-        const aDate = a.createdAt;
-        const bDate = b.createdAt;
-        
-        if (!aDate && !bDate) return 0;
-        if (!aDate) return 1;
-        if (!bDate) return -1;
-        
-        // String comparison is faster than Date object creation
-        if (typeof aDate === 'string' && typeof bDate === 'string') {
-          // Simple string comparison for ISO dates (YYYY-MM-DD...)
-          return bDate > aDate ? 1 : -1;
-        }
-        
-        // Fallback only if necessary
-        return new Date(bDate).getTime() - new Date(aDate).getTime();
-      });
-    }
+    // Always sort files by creation date for consistency
+    files.sort((a, b) => {
+      // Faster check for missing dates
+      const aDate = a.createdAt;
+      const bDate = b.createdAt;
+      
+      if (!aDate && !bDate) return 0;
+      if (!aDate) return 1;
+      if (!bDate) return -1;
+      
+      // String comparison is faster than Date object creation
+      if (typeof aDate === 'string' && typeof bDate === 'string') {
+        // Simple string comparison for ISO dates (YYYY-MM-DD...)
+        return bDate > aDate ? 1 : -1;
+      }
+      
+      // Fallback only if necessary
+      return new Date(bDate).getTime() - new Date(aDate).getTime();
+    });
     
     // Update cache
     cachedFiles = files;

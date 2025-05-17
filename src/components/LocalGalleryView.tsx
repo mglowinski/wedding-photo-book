@@ -57,32 +57,21 @@ export default function LocalGalleryView() {
       const forceParam = forceRefresh ? 'force=true' : '';
       const queryParams = [cacheBuster, forceParam].filter(Boolean).join('&');
       
-      // Use AbortController to cancel previous requests and prevent race conditions
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-      
-      // We'll use fetch to get a list of files from the server with optimized options
+      // We'll use fetch to get a list of files from the server
       const response = await fetch(`/api/local-files?${queryParams}`, {
-        signal: controller.signal,
-        method: 'GET',
-        priority: 'high'
+        method: 'GET'
       });
-      
-      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch files: ${response.status}`);
       }
       
-              // Just use the standard JSON parsing - it's fast enough
-        // and avoids TypeScript errors with manual streaming
-        const data = await response.json();
-        setFiles(data.files || []);
+      // Parse response data
+      const data = await response.json();
+      setFiles(data.files || []);
     } catch (err) {
-      if ((err as Error).name !== 'AbortError') {
-        console.error('Error fetching files:', err);
-        setError((err as Error).message || 'Failed to load files');
-      }
+      console.error('Error fetching files:', err);
+      setError((err as Error).message || 'Failed to load files');
     } finally {
       setLoading(false);
       setRefreshing(false);
