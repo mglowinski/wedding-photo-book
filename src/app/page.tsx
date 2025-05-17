@@ -26,7 +26,7 @@ export default function Home() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Link href="/upload" 
-                className="btn btn-primary text-center text-lg py-3">
+                className="bg-primary-dark text-white text-center text-lg py-3 px-4 rounded-md font-medium transition-colors hover:bg-primary-dark/90">
                 Dodaj media
               </Link>
               <Link href="/gallery" 

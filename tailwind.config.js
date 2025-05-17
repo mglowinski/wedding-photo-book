@@ -11,11 +11,16 @@ module.exports = {
     'bg-white/90',
     'bg-white/70',
     'bg-white/50',
+    'bg-primary-dark',
+    'bg-primary-dark/90',
+    'bg-transparent',
+    'bg-white',
   ],
   theme: {
     extend: {
       colors: {
         primary: '#D53F8C',
+        'primary-dark': '#B83280',
         secondary: '#ED64A6',
         dark: '#111827',
         light: '#F9FAFB',

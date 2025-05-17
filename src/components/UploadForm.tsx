@@ -341,7 +341,7 @@ export default function UploadForm() {
 
   return (
     <div>
-      <div className="bg-gray-100 p-4 rounded-lg mb-6">
+      <div className="bg-transparent p-4 rounded-lg mb-6">
         <div className="flex items-center">
           <FiCamera className="text-primary mr-2 text-2xl flex-shrink-0" />
           <h2 className="text-xl font-semibold text-black">Dodaj zdjęcia lub wideo</h2>
@@ -360,7 +360,7 @@ export default function UploadForm() {
           <div className="mb-6">
             <div
               className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center ${
-                files.length > 0 ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary'
+                files.length > 0 ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary bg-white'
               }`}
             >
               <input
