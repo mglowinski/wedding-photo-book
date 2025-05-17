@@ -91,11 +91,18 @@ export async function POST(request: Request) {
           console.error('Error reading file metadata:', error);
         }
         
-        // Add new file data
-        existingData.push(dataWithTimestamp);
+        // Check if this entry already exists by key to avoid duplicates
+        const keyExists = fileData.key && existingData.some((item: any) => item.key === fileData.key);
         
-        // Write updated data back to file
-        fs.writeFileSync(FILES_PATH, JSON.stringify(existingData, null, 2));
+        if (!keyExists) {
+          // Add new file data
+          existingData.push(dataWithTimestamp);
+          
+          // Write updated data back to file
+          fs.writeFileSync(FILES_PATH, JSON.stringify(existingData, null, 2));
+        } else {
+          console.log('Metadata entry already exists, skipping');
+        }
       } catch (error) {
         console.error('Error saving to local filesystem:', error);
         return NextResponse.json({ error: 'Nie udało się zapisać metadanych lokalnie' }, { status: 500 });

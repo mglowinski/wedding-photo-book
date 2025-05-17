@@ -62,37 +62,74 @@ export async function saveMetadataToS3(data: any): Promise<boolean> {
   try {
     const metadataFile = 'metadata/files.json';
     
-    // First, try to get existing metadata
-    let existingData = [];
-    try {
-      const getCommand = new GetObjectCommand({
-        Bucket: bucket,
-        Key: metadataFile,
-      });
-      
-      const response = await s3Client.send(getCommand);
-      const bodyContents = await response.Body?.transformToString();
-      if (bodyContents) {
-        existingData = JSON.parse(bodyContents);
+    // Use a retry mechanism to handle concurrent writes
+    let retries = 3;
+    let success = false;
+    
+    while (retries > 0 && !success) {
+      try {
+        // First, try to get existing metadata
+        let existingData = [];
+        let eTag = '';
+        
+        try {
+          const getCommand = new GetObjectCommand({
+            Bucket: bucket,
+            Key: metadataFile,
+          });
+          
+          const response = await s3Client.send(getCommand);
+          const bodyContents = await response.Body?.transformToString();
+          
+          // Store the ETag for optimistic concurrency control
+          eTag = response.ETag || '';
+          
+          if (bodyContents) {
+            existingData = JSON.parse(bodyContents);
+          }
+        } catch (error) {
+          // If file doesn't exist, that's okay - we'll create it
+          console.log('Metadata file not found, creating new one');
+        }
+        
+        // Check if this entry already exists by key to avoid duplicates
+        const keyExists = data.key && existingData.some((item: any) => item.key === data.key);
+        if (!keyExists) {
+          // Add new data
+          existingData.push(data);
+          
+          // Upload updated metadata file
+          const putCommand = new PutObjectCommand({
+            Bucket: bucket,
+            Key: metadataFile,
+            Body: JSON.stringify(existingData, null, 2),
+            ContentType: 'application/json',
+            // If we have an ETag, use it for optimistic concurrency control
+            ...(eTag ? { IfMatch: eTag } : {})
+          });
+          
+          await s3Client.send(putCommand);
+          success = true;
+        } else {
+          // Entry already exists, consider it a success
+          console.log('Metadata entry already exists, skipping');
+          success = true;
+        }
+      } catch (error: any) {
+        // If it's a PreconditionFailed error, retry
+        if (error.name === 'PreconditionFailed' || error.code === 'PreconditionFailed') {
+          console.log('Concurrent write detected, retrying...');
+          retries--;
+          // Add a small delay before retry
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } else {
+          // For other errors, bail out
+          throw error;
+        }
       }
-    } catch (error) {
-      // If file doesn't exist, that's okay - we'll create it
-      console.log('Metadata file not found, creating new one');
     }
     
-    // Add new data
-    existingData.push(data);
-    
-    // Upload updated metadata file
-    const putCommand = new PutObjectCommand({
-      Bucket: bucket,
-      Key: metadataFile,
-      Body: JSON.stringify(existingData, null, 2),
-      ContentType: 'application/json',
-    });
-    
-    await s3Client.send(putCommand);
-    return true;
+    return success;
   } catch (error) {
     console.error('Error saving metadata to S3:', error);
     return false;
