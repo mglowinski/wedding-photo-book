@@ -14,13 +14,14 @@ const S3_FILES_PATH = path.join(process.cwd(), 'data', 'files.json');
 // Type for metadata entries
 interface MediaItem {
   id: string;
-  name: string;
-  message: string;
   fileURL: string;
   fileName: string;
   fileType: 'photo' | 'video' | 'audio';
   mimeType: string;
   createdAt: string;
+  // Backward compatibility fields
+  name?: string;
+  message?: string;
 }
 
 // Read metadata from file
@@ -161,12 +162,13 @@ export async function GET(request: NextRequest) {
         
         return {
           url,
-          id: fileMetadata?.id, // Include the ID for deletion
-          name: fileMetadata?.name || 'Unknown',
-          message: fileMetadata?.message || '',
+          id: fileMetadata?.id,
           fileName: fileMetadata?.fileName || path.basename(url),
           type: fileMetadata?.fileType || determineFileType(url),
-          createdAt: fileMetadata?.createdAt || null
+          createdAt: fileMetadata?.createdAt || null,
+          // Keep these for backward compatibility
+          name: fileMetadata?.name,
+          message: fileMetadata?.message
         };
       });
     }

@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     console.log('File saved successfully:', fullFilePath);
     console.log('Public URL:', publicUrl);
     
-    // Update metadata
+    // Update metadata with simplified structure
     const fileType = folder as 'photo' | 'video';
     const metadata = readMetadata();
     
