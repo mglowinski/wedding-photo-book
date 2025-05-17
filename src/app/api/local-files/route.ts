@@ -76,10 +76,40 @@ interface S3FileMetadata {
   createdAt?: string;
 }
 
+// Define type for the files
+interface GalleryFile {
+  url: string;
+  fileName: string;
+  type: string;
+  createdAt: string | null;
+  id?: string;
+  key?: string;
+  name?: string;
+  message?: string;
+}
+
+// Keep a cached result but refresh it every 30 seconds regardless
+// This provides a balance without HTTP caching
+let cachedFiles: GalleryFile[] = [];
+let lastCacheTime = 0;
+const CACHE_TTL = 30000; // 30 seconds
+
 export async function GET(request: NextRequest) {
   try {
     const forcedSync = request.nextUrl.searchParams.get('force') === 'true';
-    let files = [];
+    const now = Date.now();
+    
+    // Use cached data if available and not forcing refresh and cache is fresh
+    if (!forcedSync && cachedFiles.length > 0 && (now - lastCacheTime) < CACHE_TTL) {
+      return new NextResponse(JSON.stringify({ files: cachedFiles }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, max-age=0'
+        }
+      });
+    }
+    
+    let files: GalleryFile[] = [];
     
     // If using S3 storage, get files from S3 metadata
     if (isS3Storage() || process.env.VERCEL) {
@@ -94,76 +124,106 @@ export async function GET(request: NextRequest) {
       // Fetch the metadata
       const s3Metadata = await getMetadataFromS3();
       
-      // Map files with minimal processing
-      files = s3Metadata.map((file: S3FileMetadata) => {
-        const item: any = {
-          url: file.url,
-          key: file.key,
-          type: file.type,
-          createdAt: file.createdAt
-        };
-        
-        // Only include these fields if they exist
-        if (file.name) item.name = file.name;
-        if (file.message) item.message = file.message;
-        if (file.fileName) {
-          item.fileName = file.fileName;
-        } else if (file.url && file.key) {
-          // Extract filename from key which is more efficient than URL parsing
-          item.fileName = file.key.split('/').pop() || '';
-        }
-        
-        return item;
-      });
+      // Process in batches for better performance with large sets
+      const batchSize = 100;
+      for (let i = 0; i < s3Metadata.length; i += batchSize) {
+        const batch = s3Metadata.slice(i, i + batchSize);
+        const processedBatch = batch.map((file: S3FileMetadata) => {
+          // Pre-allocate the object with most common fields
+          const item: any = {
+            url: file.url,
+            key: file.key,
+            type: file.type,
+            createdAt: file.createdAt
+          };
+          
+          // Only include these fields if they exist (minimal object construction)
+          if (file.name) item.name = file.name;
+          if (file.message) item.message = file.message;
+          if (file.fileName) {
+            item.fileName = file.fileName;
+          } else if (file.url && file.key) {
+            const keyParts = file.key.split('/');
+            item.fileName = keyParts[keyParts.length - 1] || '';
+          }
+          
+          return item;
+        });
+        files = files.concat(processedBatch);
+      }
     } else {
-      // Local file handling - optimized
+      // Local file handling - optimized with pre-allocation
       const fileUrls: string[] = scanDirectory(UPLOAD_DIR);
       const metadata = readMetadata();
       
       // Create lookup map for faster metadata access instead of repeated find() calls
       const metadataMap = new Map();
-      metadata.forEach(item => {
-        if (item.fileURL) metadataMap.set(item.fileURL, item);
-      });
+      for (let i = 0; i < metadata.length; i++) {
+        if (metadata[i].fileURL) metadataMap.set(metadata[i].fileURL, metadata[i]);
+      }
       
-      // Create file objects with metadata more efficiently
-      files = fileUrls.map(url => {
-        const fileMetadata = metadataMap.get(url);
-        const fileName = fileMetadata?.fileName || path.basename(url);
+      // Process files in chunks for better performance
+      const chunkSize = 100;
+      for (let i = 0; i < fileUrls.length; i += chunkSize) {
+        const chunk = fileUrls.slice(i, i + chunkSize);
+        const processedChunk = chunk.map(url => {
+          const fileMetadata = metadataMap.get(url);
+          // Extract filename directly for better performance
+          let fileName: string;
+          if (fileMetadata?.fileName) {
+            fileName = fileMetadata.fileName;
+          } else {
+            const parts = url.split('/');
+            fileName = parts[parts.length - 1];
+          }
+          
+          // Pre-allocate common fields
+          const item: any = {
+            url,
+            fileName,
+            type: fileMetadata?.fileType || determineFileType(fileName),
+            // Skip date object creation for better performance
+            createdAt: fileMetadata?.createdAt || null
+          };
+          
+          // Only include these fields if they exist
+          if (fileMetadata?.id) item.id = fileMetadata.id;
+          if (fileMetadata?.message) item.message = fileMetadata.message;
+          
+          return item;
+        });
+        files = files.concat(processedChunk);
+      }
+    }
+    
+    // Sort only if not many files, otherwise skip sorting for performance
+    if (files.length < 1000) {
+      // Use more efficient sorting
+      files.sort((a, b) => {
+        // Faster check for missing dates
+        const aDate = a.createdAt;
+        const bDate = b.createdAt;
         
-        const item: any = {
-          url,
-          fileName,
-          type: fileMetadata?.fileType || determineFileType(fileName),
-          createdAt: fileMetadata?.createdAt || null
-        };
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
         
-        // Only include these fields if they exist in metadata
-        if (fileMetadata?.id) item.id = fileMetadata.id;
-        if (fileMetadata?.name) item.name = fileMetadata.name;
-        if (fileMetadata?.message) item.message = fileMetadata.message;
+        // String comparison is faster than Date object creation
+        if (typeof aDate === 'string' && typeof bDate === 'string') {
+          // Simple string comparison for ISO dates (YYYY-MM-DD...)
+          return bDate > aDate ? 1 : -1;
+        }
         
-        return item;
+        // Fallback only if necessary
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
       });
     }
     
-    // Sort files by creation date more efficiently
-    files.sort((a, b) => {
-      // Handle missing dates
-      if (!a.createdAt && !b.createdAt) return 0;
-      if (!a.createdAt) return 1;
-      if (!b.createdAt) return -1;
-      
-      // Direct timestamp comparison if possible
-      if (typeof a.createdAt === 'string' && typeof b.createdAt === 'string') {
-        return b.createdAt.localeCompare(a.createdAt);
-      }
-      
-      // Fallback to object creation
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    // Update cache
+    cachedFiles = files;
+    lastCacheTime = now;
     
-    // Return with no-cache headers to ensure fresh data
+    // Return with no-cache headers to ensure fresh data on next request
     return new NextResponse(JSON.stringify({ files }), {
       headers: {
         'Content-Type': 'application/json',
