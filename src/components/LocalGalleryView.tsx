@@ -267,6 +267,24 @@ export default function LocalGalleryView() {
     }
   };
 
+  // Convert regular URLs to streamable URLs for videos
+  const getStreamableUrl = (url: string): string => {
+    // Only process URLs for local files from the uploads directory
+    if (!url.includes('/uploads/')) return url;
+    
+    // Example: /uploads/video/file.mp4 => /api/media-stream/video/file.mp4
+    const filePathMatch = url.match(/\/uploads\/(.+)/);
+    if (!filePathMatch || !filePathMatch[1]) return url;
+    
+    // Only use streaming for video and audio files
+    const fileExt = url.split('.').pop()?.toLowerCase();
+    const isStreamableFormat = ['mp4', 'webm', 'mov', 'avi', 'mp3', 'wav'].includes(fileExt || '');
+    
+    if (!isStreamableFormat) return url;
+    
+    return `/api/media-stream/${filePathMatch[1]}`;
+  };
+
   if (loading && !refreshing) {
     return (
       <div className="text-center py-10">
@@ -548,7 +566,8 @@ export default function LocalGalleryView() {
                       <video 
                         controls 
                         className="w-full rounded-md"
-                        src={file.url}
+                        src={getStreamableUrl(file.url)}
+                        preload="metadata"
                       >
                         Twoja przeglądarka nie obsługuje odtwarzania wideo.
                       </video>
