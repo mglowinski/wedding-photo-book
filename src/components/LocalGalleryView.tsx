@@ -140,8 +140,6 @@ export default function LocalGalleryView() {
     setModalImage(file);
     // Prevent scrolling on body when modal is open
     document.body.style.overflow = 'hidden';
-    // Add touchmove prevention for mobile devices
-    document.addEventListener('touchmove', preventTouchMove, { passive: false });
   };
 
   // Close image modal
@@ -149,16 +147,6 @@ export default function LocalGalleryView() {
     setModalImage(null);
     // Restore scrolling
     document.body.style.overflow = 'auto';
-    // Remove touchmove prevention
-    document.removeEventListener('touchmove', preventTouchMove);
-  };
-  
-  // Prevent touch move to enable proper modal viewing on mobile
-  const preventTouchMove = (e: TouchEvent) => {
-    // Only prevent default if modal is open
-    if (modalImage) {
-      e.preventDefault();
-    }
   };
 
   // Handle keyboard events for modal
@@ -223,24 +211,11 @@ export default function LocalGalleryView() {
     <div>
       {/* Image Modal */}
       {modalImage && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 touch-none" 
-          onClick={closeImageModal}
-          onTouchEnd={(e) => {
-            // For mobile: detect tap on background to close
-            if (e.target === e.currentTarget) {
-              closeImageModal();
-            }
-          }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" onClick={closeImageModal}>
           <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-4">
             <button 
-              className="absolute top-3 right-3 sm:top-5 sm:right-5 bg-black bg-opacity-70 text-white p-3 rounded-full hover:bg-opacity-90 z-10"
+              className="absolute top-3 right-3 sm:top-5 sm:right-5 bg-black bg-opacity-70 text-white p-2 rounded-full hover:bg-opacity-90 z-10"
               onClick={(e) => {
-                e.stopPropagation();
-                closeImageModal();
-              }}
-              onTouchEnd={(e) => {
                 e.stopPropagation();
                 closeImageModal();
               }}
@@ -249,16 +224,15 @@ export default function LocalGalleryView() {
             </button>
             
             <div 
-              className="bg-white rounded-lg shadow-lg overflow-hidden max-w-[95%] max-h-[85%] sm:max-w-[90%] md:max-w-3xl lg:max-w-4xl w-auto h-auto flex flex-col"
+              className="bg-white rounded-lg shadow-lg overflow-hidden max-w-[95%] max-h-[90%] sm:max-w-[90%] md:max-w-3xl lg:max-w-4xl w-auto h-auto flex flex-col"
               onClick={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
             >
               {/* Image container with fixed aspect ratio */}
               <div className="relative overflow-hidden p-2 sm:p-4 flex-grow flex items-center justify-center">
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[65vh] max-w-full object-contain"
+                  className="max-h-[70vh] max-w-full object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
@@ -412,14 +386,6 @@ export default function LocalGalleryView() {
                     <div 
                       className="relative w-full h-36 sm:h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
                       onClick={() => openImageModal(file)}
-                      onTouchEnd={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openImageModal(file);
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Zobacz zdjęcie"
                     >
                       <img
                         src={file.url}
