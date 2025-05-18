@@ -230,14 +230,13 @@ export default function LocalGalleryView() {
           }}
           onClick={closeImageModal}
         >
-          <div className="w-full h-full flex items-center justify-center p-2 sm:p-4" style={{ minHeight: '100vh' }}>
+          <div className="w-full h-full flex items-center justify-center p-2 sm:p-4">
             <button 
               className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white bg-opacity-80 text-black p-2 rounded-full hover:bg-opacity-100 z-50 shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
                 closeImageModal();
               }}
-              style={{ position: 'fixed' }} // Ensure it's always visible
             >
               <FiX size={24} />
             </button>
@@ -254,7 +253,7 @@ export default function LocalGalleryView() {
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[50vh] sm:max-h-[55vh] w-auto max-w-[85vw] sm:max-w-[90%] object-contain"
+                  className="max-h-[60vh] sm:max-h-[60vh] w-auto max-w-[90vw] sm:max-w-full object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
