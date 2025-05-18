@@ -235,10 +235,10 @@ export default function LocalGalleryView() {
             left: '50%',
             transform: 'translateX(-50%)',
             width: 'auto',
-            minWidth: '90%',
-            maxWidth: '98%',
+            minWidth: '80%',
+            maxWidth: '90%',
             height: 'auto',
-            maxHeight: '95vh',
+            maxHeight: '90vh',
             padding: '10px',
             borderRadius: '8px',
             backgroundColor: 'rgba(0, 0, 0, 0.65)'
@@ -247,18 +247,23 @@ export default function LocalGalleryView() {
         >
           <div className="w-full h-full flex items-center justify-center p-2 sm:p-4">
             <button 
-              className="absolute top-0 right-0 bg-white bg-opacity-80 text-black p-2 rounded-full hover:bg-opacity-100 z-50 shadow-md"
+              className="absolute top-0 right-0 bg-white bg-opacity-90 text-black p-2 rounded-full hover:bg-opacity-100 z-50 shadow-lg"
               style={{
-                top: '-10px',
-                right: '-10px',
-                transform: 'translate(30%, -30%)'
+                top: '-12px',
+                right: '-12px',
+                transform: 'translate(25%, -25%)',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
               onClick={(e) => {
                 e.stopPropagation();
                 closeImageModal();
               }}
             >
-              <FiX size={24} />
+              <FiX size={28} />
             </button>
             
             <div 
