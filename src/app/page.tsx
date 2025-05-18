@@ -26,11 +26,11 @@ export default function Home() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Link href="/upload" 
-                className="btn btn-secondary text-center text-lg py-3">
+                className="btn bg-secondary text-white text-center text-lg py-3 px-4 rounded-md font-medium transition-colors hover:bg-secondary/90">
                 Dodaj media
               </Link>
               <Link href="/gallery" 
-                className="btn btn-secondary text-center text-lg py-3">
+                className="btn bg-secondary text-white text-center text-lg py-3 px-4 rounded-md font-medium transition-colors hover:bg-secondary/90">
                 Zobacz galerię
               </Link>
             </div>
