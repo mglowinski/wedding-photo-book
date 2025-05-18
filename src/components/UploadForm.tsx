@@ -126,17 +126,19 @@ export default function UploadForm() {
     const updatedFiles = [...files];
     
     // Upload each file
-    const uploadPromises = validFiles.map(async (file, index) => {
+    const uploadPromises = validFiles.map(async (file) => {
       try {
-        // Update progress to show we're starting this file
+        // Find the file index in our state array
         const fileIndex = updatedFiles.findIndex(f => f.id === file.id);
+        
+        // Update progress to show we're starting this file
         updatedFiles[fileIndex].progress = 5;
         setFiles([...updatedFiles]);
         
         // Determine folder based on file type
         const folder = determineMediaFolder(file);
         
-        // Step 1: Get a presigned upload URL from our API
+        // Step 1: Get a presigned upload URL from our API (15% of progress)
         const urlResponse = await fetch('/api/generate-upload-url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -152,26 +154,42 @@ export default function UploadForm() {
         }
         
         const { uploadUrl, fileUrl, key } = await urlResponse.json();
-        updatedFiles[fileIndex].progress = 20;
+        updatedFiles[fileIndex].progress = 15;
         setFiles([...updatedFiles]);
         
-        // Step 2: Upload file directly to S3 using the presigned URL
-        const uploadResponse = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type
-          }
+        // Step 2: Upload file directly to S3 using XMLHttpRequest for progress tracking (15% to 85%)
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              // Calculate progress scaled to our 15-85% range
+              const scaledProgress = 15 + Math.round((event.loaded / event.total) * 70);
+              updatedFiles[fileIndex].progress = scaledProgress;
+              setFiles([...updatedFiles]);
+            }
+          };
+          
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              updatedFiles[fileIndex].progress = 85;
+              setFiles([...updatedFiles]);
+              resolve();
+            } else {
+              reject(new Error('Nie udało się przesłać pliku'));
+            }
+          };
+          
+          xhr.onerror = () => {
+            reject(new Error('Błąd sieci podczas przesyłania'));
+          };
+          
+          xhr.open('PUT', uploadUrl, true);
+          xhr.setRequestHeader('Content-Type', file.type);
+          xhr.send(file);
         });
         
-        if (!uploadResponse.ok) {
-          throw new Error('Nie udało się przesłać pliku');
-        }
-        
-        updatedFiles[fileIndex].progress = 60;
-        setFiles([...updatedFiles]);
-        
-        // Step 3: Save file metadata to our API
+        // Step 3: Save file metadata to our API (85% to 100%)
         const metadataResponse = await fetch('/api/save-file-metadata', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -235,62 +253,97 @@ export default function UploadForm() {
     // Create a copy of files to update during upload
     const updatedFiles = [...files];
     
-    // Upload each file
-    const uploadPromises = validFiles.map(async (file, index) => {
-      try {
-        // Update progress to show we're starting this file
-        const fileIndex = updatedFiles.findIndex(f => f.id === file.id);
-        updatedFiles[fileIndex].progress = 10;
-        setFiles([...updatedFiles]);
-        
+    // Upload each file using XMLHttpRequest for progress tracking
+    const uploadPromises = validFiles.map((file) => {
+      return new Promise<boolean>((resolve) => {
         // Determine folder based on file type
         const folder = determineMediaFolder(file);
         
-        // Upload using the local upload endpoint
+        // Create FormData
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', folder);
         
-        updatedFiles[fileIndex].progress = 30;
-        setFiles([...updatedFiles]);
+        // Find the file index in our state array
+        const fileIndex = updatedFiles.findIndex(f => f.id === file.id);
         
-        const response = await fetch('/api/local-upload', {
-          method: 'POST',
-          body: formData
-        });
+        // Create and configure XMLHttpRequest
+        const xhr = new XMLHttpRequest();
         
-        // Check if the response is successful
-        let result;
-        try {
-          const responseText = await response.text();
-          result = JSON.parse(responseText);
-          
-          if (!response.ok) {
-            throw new Error(result.error || `Przesyłanie nie powiodło się: ${response.status}`);
+        // Set up progress event
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            // Calculate upload percentage
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            
+            // Update file progress
+            updatedFiles[fileIndex].progress = percentComplete;
+            setFiles([...updatedFiles]);
           }
+        };
+        
+        // Set up load event (complete)
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              
+              // Mark file as successfully uploaded
+              updatedFiles[fileIndex].progress = 100;
+              updatedFiles[fileIndex].uploaded = true;
+              setFiles([...updatedFiles]);
+              
+              completedUploads++;
+              resolve(true);
+            } catch (parseError) {
+              console.error('Failed to parse response:', parseError);
+              
+              // Mark file as failed
+              updatedFiles[fileIndex].error = 'Nie udało się przetworzyć odpowiedzi serwera';
+              setFiles([...updatedFiles]);
+              
+              failedUploads++;
+              resolve(false);
+            }
+          } else {
+            let errorMessage = `Przesyłanie nie powiodło się: ${xhr.status}`;
+            
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (response.error) {
+                errorMessage = response.error;
+              }
+            } catch (e) {
+              // Ignore parse error, use default message
+            }
+            
+            // Mark file as failed
+            updatedFiles[fileIndex].error = errorMessage;
+            setFiles([...updatedFiles]);
+            
+            failedUploads++;
+            resolve(false);
+          }
+        };
+        
+        // Set up error event
+        xhr.onerror = () => {
+          console.error(`Network error uploading file ${file.name}`);
           
-          // Mark this file as successfully uploaded
-          updatedFiles[fileIndex].progress = 100;
-          updatedFiles[fileIndex].uploaded = true;
+          // Mark file as failed
+          updatedFiles[fileIndex].error = 'Błąd sieci podczas przesyłania';
           setFiles([...updatedFiles]);
           
-          completedUploads++;
-          return true;
-        } catch (parseError) {
-          console.error('Failed to parse response:', parseError);
-          throw new Error('Nie udało się przetworzyć odpowiedzi serwera');
-        }
-      } catch (error) {
-        console.error(`Error uploading file ${file.name}:`, error);
+          failedUploads++;
+          resolve(false);
+        };
         
-        // Mark this file as failed
-        const fileIndex = updatedFiles.findIndex(f => f.id === file.id);
-        updatedFiles[fileIndex].error = (error as Error).message;
-        setFiles([...updatedFiles]);
+        // Initialize the request
+        xhr.open('POST', '/api/local-upload', true);
         
-        failedUploads++;
-        return false;
-      }
+        // Send the request
+        xhr.send(formData);
+      });
     });
     
     // Wait for all uploads to complete
