@@ -168,23 +168,8 @@ export default function LocalGalleryView() {
     };
   }, [modalImage]);
   
-  // Ensure the modal is visible at the user's current position
-  useEffect(() => {
-    if (modalImage) {
-      // Make sure modal is positioned in visible area
-      setTimeout(() => {
-        const container = document.getElementById('modalImageContainer');
-        if (container) {
-          // Handle viewport differently based on screen width (mobile vs desktop)
-          const isMobile = window.innerWidth < 640; // sm breakpoint in Tailwind
-          container.scrollIntoView({ 
-            behavior: 'auto',
-            block: isMobile ? 'start' : 'center' // Start position on mobile, center on desktop
-          });
-        }
-      }, 100);
-    }
-  }, [modalImage]);
+  // Let's not scroll the modal on mobile - it causes positioning issues
+  // The modal container is already fixed position and should be visible
 
   // Format date
   const formatDate = (dateString?: string) => {
@@ -245,15 +230,16 @@ export default function LocalGalleryView() {
           }}
           onClick={closeImageModal}
         >
-          <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
+          <div className="w-full h-full flex items-center justify-center p-2 sm:p-4" style={{ minHeight: '100vh' }}>
             <button 
-              className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-black bg-opacity-50 text-white p-1.5 rounded-full hover:bg-opacity-80 z-10"
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white bg-opacity-80 text-black p-2 rounded-full hover:bg-opacity-100 z-50 shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
                 closeImageModal();
               }}
+              style={{ position: 'fixed' }} // Ensure it's always visible
             >
-              <FiX size={20} />
+              <FiX size={24} />
             </button>
             
             <div 
