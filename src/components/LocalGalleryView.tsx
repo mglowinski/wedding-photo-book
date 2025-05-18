@@ -235,35 +235,35 @@ export default function LocalGalleryView() {
             left: '50%',
             transform: 'translateX(-50%)',
             width: 'auto',
-            minWidth: '80%',
-            maxWidth: '90%',
+            minWidth: '70%',
+            maxWidth: '85%',
             height: 'auto',
-            maxHeight: '90vh',
-            padding: '10px',
+            maxHeight: '85vh',
+            padding: '8px',
             borderRadius: '8px',
-            backgroundColor: 'rgba(0, 0, 0, 0.65)'
+            backgroundColor: 'rgba(0, 0, 0, 0.75)'
           }}
           onClick={closeImageModal}
         >
           <div className="w-full h-full flex items-center justify-center p-2 sm:p-4">
             <button 
-              className="absolute top-0 right-0 bg-white bg-opacity-90 text-black p-2 rounded-full hover:bg-opacity-100 z-50 shadow-lg"
+              className="absolute top-0 right-0 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 z-50 shadow-lg"
               style={{
-                top: '-12px',
-                right: '-12px',
-                transform: 'translate(25%, -25%)',
-                width: '40px',
-                height: '40px',
+                top: '5px',
+                right: '5px',
+                width: '36px',
+                height: '36px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                border: '2px solid white'
               }}
               onClick={(e) => {
                 e.stopPropagation();
                 closeImageModal();
               }}
             >
-              <FiX size={28} />
+              <FiX size={24} />
             </button>
             
             <div 
@@ -284,8 +284,8 @@ export default function LocalGalleryView() {
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[85vh] w-auto object-contain"
-                  style={{ maxWidth: '100%', minWidth: '300px' }}
+                  className="max-h-[80vh] w-auto object-contain"
+                  style={{ maxWidth: '95%', minWidth: '250px' }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
