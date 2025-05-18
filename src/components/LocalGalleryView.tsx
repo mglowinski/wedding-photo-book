@@ -236,10 +236,10 @@ export default function LocalGalleryView() {
             transform: 'translateX(-50%)',
             width: 'auto',
             minWidth: '90%',
-            maxWidth: '95%',
+            maxWidth: '98%',
             height: 'auto',
-            maxHeight: '90vh',
-            padding: '15px',
+            maxHeight: '95vh',
+            padding: '10px',
             borderRadius: '8px',
             backgroundColor: 'rgba(0, 0, 0, 0.65)'
           }}
@@ -266,8 +266,8 @@ export default function LocalGalleryView() {
               style={{ 
                 maxWidth: '100%',
                 maxHeight: '100%',
-                minHeight: '200px',
-                minWidth: '200px'
+                minHeight: '300px',
+                minWidth: '300px'
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -279,8 +279,8 @@ export default function LocalGalleryView() {
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[75vh] w-auto object-contain"
-                  style={{ maxWidth: '100%', minWidth: '200px' }}
+                  className="max-h-[85vh] w-auto object-contain"
+                  style={{ maxWidth: '100%', minWidth: '300px' }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
