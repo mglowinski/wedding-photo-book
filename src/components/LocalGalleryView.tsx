@@ -270,7 +270,7 @@ export default function LocalGalleryView() {
                 width: 'auto',
                 height: 'auto'
               }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={closeImageModal}
             >
               {/* Image container with automatically adjusted position */}
               <div 
@@ -282,6 +282,7 @@ export default function LocalGalleryView() {
                   alt={modalImage.fileName || 'Zdjęcie'}
                   className="max-h-[80vh] w-auto object-contain"
                   style={{ maxWidth: '95%', minWidth: '250px' }}
+                  onClick={closeImageModal}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
@@ -309,7 +310,7 @@ export default function LocalGalleryView() {
               </div>
               
               {/* Info footer */}
-              <div className="py-1 px-2 sm:p-3 border-t border-gray-100">
+              <div className="py-1 px-2 sm:p-3 border-t border-gray-100" onClick={closeImageModal}>
                 {modalImage.message && (
                   <div className="mb-2 text-gray-600 flex items-start">
                     <FiMessageCircle className="text-gray-400 mr-1 mt-0.5 flex-shrink-0" />
