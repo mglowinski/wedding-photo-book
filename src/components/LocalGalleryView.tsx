@@ -464,8 +464,7 @@ export default function LocalGalleryView() {
                           console.error('Error loading image:', file.url);
                         }}
                       />
-                      <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity flex items-center justify-center">
-                        <span className="text-white font-medium">Zobacz</span>
+                      <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity">
                       </div>
                     </div>
                   )}
