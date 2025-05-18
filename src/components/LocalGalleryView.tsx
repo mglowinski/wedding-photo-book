@@ -211,7 +211,7 @@ export default function LocalGalleryView() {
     <div>
       {/* Image Modal */}
       {modalImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" onClick={closeImageModal}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 touch-none" onClick={closeImageModal}>
           <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-4">
             <button 
               className="absolute top-3 right-3 sm:top-5 sm:right-5 bg-black bg-opacity-70 text-white p-2 rounded-full hover:bg-opacity-90 z-10"
@@ -224,7 +224,7 @@ export default function LocalGalleryView() {
             </button>
             
             <div 
-              className="bg-white rounded-lg shadow-lg overflow-hidden max-w-[95%] max-h-[90%] sm:max-w-[90%] md:max-w-3xl lg:max-w-4xl w-auto h-auto flex flex-col"
+              className="bg-white rounded-lg shadow-lg overflow-hidden w-[95vw] max-h-[90vh] sm:max-w-[90%] md:max-w-3xl lg:max-w-4xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Image container with fixed aspect ratio */}
@@ -232,7 +232,7 @@ export default function LocalGalleryView() {
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[70vh] max-w-full object-contain"
+                  className="max-h-[60vh] w-auto max-w-[90vw] sm:max-w-full object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
@@ -391,6 +391,7 @@ export default function LocalGalleryView() {
                         src={file.url}
                         alt={file.fileName || 'Zdjęcie'}
                         className="object-cover w-full h-full"
+                        loading="lazy"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.onerror = null;
