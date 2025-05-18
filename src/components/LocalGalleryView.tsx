@@ -89,46 +89,68 @@ export default function LocalGalleryView() {
     ? files 
     : files.filter(file => file.type === filter);
 
-  // Handle file download
+  // Handle file download with streaming support for large files
   const handleDownload = async (url: string, fileName: string) => {
     try {
       // Show temporary download indicator for this specific file
       setDownloadingFileUrl(url);
       
-      // Fetch the file as a blob
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache'
+      // Check if the file is potentially large (video file)
+      const isLargeFile = url.match(/\.(mp4|webm|mov|avi|mkv)$/i) !== null;
+      
+      if (isLargeFile) {
+        // For large files, use direct browser download instead of loading to memory
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName || '';
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        
+        // Add to DOM and click
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        setTimeout(() => {
+          document.body.removeChild(link);
+          setDownloadingFileUrl(null);
+        }, 100);
+      } else {
+        // For smaller files, use the blob approach for better filename control
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to download file');
         }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to download file');
+        
+        // Get the file as a blob
+        const blob = await response.blob();
+        
+        // Create a local object URL for the blob
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Create a temporary anchor element for downloading
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName || 'download';
+        link.style.display = 'none';
+        
+        // Add to DOM, click and clean up
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+          setDownloadingFileUrl(null);
+        }, 100);
       }
-      
-      // Get the file as a blob
-      const blob = await response.blob();
-      
-      // Create a local object URL for the blob
-      const blobUrl = URL.createObjectURL(blob);
-      
-      // Create a temporary anchor element for downloading
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileName || 'download';
-      link.style.display = 'none';
-      
-      // Add to DOM, click and clean up
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-        setDownloadingFileUrl(null);
-      }, 100);
     } catch (error) {
       console.error('Error downloading file:', error);
       alert('Nie udało się pobrać pliku. Spróbuj ponownie.');
