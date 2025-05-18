@@ -234,7 +234,7 @@ export default function LocalGalleryView() {
       {/* Image Modal - positioned at current scroll */}
       {modalImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 touch-none" 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 touch-none" 
           style={{ 
             position: 'fixed',
             top: '0',
@@ -246,28 +246,28 @@ export default function LocalGalleryView() {
         >
           <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-4">
             <button 
-              className="absolute top-3 right-3 sm:top-5 sm:right-5 bg-black bg-opacity-70 text-white p-2 rounded-full hover:bg-opacity-90 z-10"
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-black bg-opacity-50 text-white p-1.5 rounded-full hover:bg-opacity-80 z-10"
               onClick={(e) => {
                 e.stopPropagation();
                 closeImageModal();
               }}
             >
-              <FiX size={24} />
+              <FiX size={20} />
             </button>
             
             <div 
-              className="bg-white rounded-lg shadow-lg overflow-hidden w-[95vw] max-h-[90vh] sm:max-w-[90%] md:max-w-3xl lg:max-w-4xl flex flex-col"
+              className="bg-white bg-opacity-90 rounded-lg shadow-lg overflow-hidden w-[90vw] max-h-[85vh] sm:max-w-[85%] md:max-w-2xl lg:max-w-3xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Image container with automatically adjusted position */}
               <div 
-                className="relative overflow-hidden p-2 sm:p-4 flex-grow flex items-center justify-center"
+                className="relative overflow-hidden p-1 sm:p-2 flex-grow flex items-center justify-center"
                 id="modalImageContainer"
               >
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[80vh] sm:max-h-[60vh] w-auto max-w-[90vw] sm:max-w-full object-contain"
+                  className="max-h-[75vh] sm:max-h-[55vh] w-auto max-w-[85vw] sm:max-w-[90%] object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
@@ -295,22 +295,22 @@ export default function LocalGalleryView() {
               </div>
               
               {/* Info footer */}
-              <div className="p-3 sm:p-4 border-t">
+              <div className="p-2 sm:p-3 border-t border-gray-100">
                 {modalImage.message && (
-                  <div className="mb-3 text-gray-600 flex items-start">
-                    <FiMessageCircle className="text-gray-400 mr-1.5 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs sm:text-sm">{modalImage.message}</p>
+                  <div className="mb-2 text-gray-600 flex items-start">
+                    <FiMessageCircle className="text-gray-400 mr-1 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs">{modalImage.message}</p>
                   </div>
                 )}
                 
                 <div className="flex justify-between items-center">
-                  <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[45%]">
+                  <div className="text-xs text-gray-500 truncate max-w-[45%]">
                     {formatDate(modalImage.createdAt)}
                   </div>
                   <button
                     onClick={() => handleDownload(modalImage.url, modalImage.fileName || '')}
                     disabled={downloadingFileUrl === modalImage.url}
-                    className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
+                    className="flex items-center text-primary hover:text-primary/80 text-xs"
                   >
                     {downloadingFileUrl === modalImage.url ? (
                       <>
