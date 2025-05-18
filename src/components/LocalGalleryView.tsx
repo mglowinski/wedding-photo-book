@@ -138,6 +138,8 @@ export default function LocalGalleryView() {
   // Open image in modal
   const openImageModal = (file: LocalFile) => {
     setModalImage(file);
+    // Store current scroll position
+    window.sessionStorage.setItem('scrollPosition', window.scrollY.toString());
     // Prevent scrolling on body when modal is open
     document.body.style.overflow = 'hidden';
   };
@@ -147,6 +149,9 @@ export default function LocalGalleryView() {
     setModalImage(null);
     // Restore scrolling
     document.body.style.overflow = 'auto';
+    // Restore scroll position
+    const scrollPosition = parseInt(window.sessionStorage.getItem('scrollPosition') || '0');
+    setTimeout(() => window.scrollTo(0, scrollPosition), 50);
   };
 
   // Handle keyboard events for modal
@@ -161,6 +166,23 @@ export default function LocalGalleryView() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
+  }, [modalImage]);
+  
+  // Ensure the modal is visible at the user's current position
+  useEffect(() => {
+    if (modalImage) {
+      // Make sure modal is positioned in visible area
+      setTimeout(() => {
+        const container = document.getElementById('modalImageContainer');
+        if (container) {
+          // Center in viewport
+          container.scrollIntoView({ 
+            behavior: 'auto',
+            block: 'center'
+          });
+        }
+      }, 100);
+    }
   }, [modalImage]);
 
   // Format date
@@ -209,9 +231,19 @@ export default function LocalGalleryView() {
 
   return (
     <div>
-      {/* Image Modal */}
+      {/* Image Modal - positioned at current scroll */}
       {modalImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 touch-none" onClick={closeImageModal}>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 touch-none" 
+          style={{ 
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%'
+          }}
+          onClick={closeImageModal}
+        >
           <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-4">
             <button 
               className="absolute top-3 right-3 sm:top-5 sm:right-5 bg-black bg-opacity-70 text-white p-2 rounded-full hover:bg-opacity-90 z-10"
@@ -227,12 +259,15 @@ export default function LocalGalleryView() {
               className="bg-white rounded-lg shadow-lg overflow-hidden w-[95vw] max-h-[90vh] sm:max-w-[90%] md:max-w-3xl lg:max-w-4xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Image container with fixed aspect ratio */}
-              <div className="relative overflow-hidden p-2 sm:p-4 flex-grow flex items-center justify-center">
+              {/* Image container with automatically adjusted position */}
+              <div 
+                className="relative overflow-hidden p-2 sm:p-4 flex-grow flex items-center justify-center"
+                id="modalImageContainer"
+              >
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[60vh] w-auto max-w-[90vw] sm:max-w-full object-contain"
+                  className="max-h-[80vh] sm:max-h-[60vh] w-auto max-w-[90vw] sm:max-w-full object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
