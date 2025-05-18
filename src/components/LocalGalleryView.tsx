@@ -235,11 +235,7 @@ export default function LocalGalleryView() {
             left: '50%',
             transform: 'translateX(-50%)',
             width: 'auto',
-            minWidth: '70%',
-            maxWidth: '85%',
-            height: 'auto',
-            maxHeight: '85vh',
-            padding: '8px',
+            padding: '0',
             borderRadius: '8px',
             backgroundColor: 'rgba(0, 0, 0, 0.75)'
           }}
@@ -269,10 +265,10 @@ export default function LocalGalleryView() {
             <div 
               className="bg-white bg-opacity-95 rounded-lg shadow-lg overflow-hidden flex flex-col"
               style={{ 
-                maxWidth: '100%',
-                maxHeight: '100%',
-                minHeight: '300px',
-                minWidth: '300px'
+                maxWidth: '90vw',
+                maxHeight: '85vh',
+                width: 'auto',
+                height: 'auto'
               }}
               onClick={(e) => e.stopPropagation()}
             >
