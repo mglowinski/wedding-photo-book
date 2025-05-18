@@ -135,31 +135,23 @@ export default function LocalGalleryView() {
     }
   };
 
-  // Store scroll position outside component to preserve it
-  let savedScrollY = 0;
-
   // Open image in modal
   const openImageModal = (file: LocalFile) => {
-    // Save current scroll position
-    savedScrollY = window.scrollY;
-    
-    // Set modal image
     setModalImage(file);
-    
+    // Store current scroll position
+    window.sessionStorage.setItem('scrollPosition', window.scrollY.toString());
     // Prevent scrolling on body when modal is open
     document.body.style.overflow = 'hidden';
   };
 
   // Close image modal
   const closeImageModal = () => {
-    // First, change the overflow style
-    document.body.style.overflow = 'auto';
-    
-    // Then hide the modal
     setModalImage(null);
-    
-    // Restore scroll position without waiting (no setTimeout)
-    window.scrollTo(0, savedScrollY);
+    // Restore scrolling
+    document.body.style.overflow = 'auto';
+    // Restore scroll position
+    const scrollPosition = parseInt(window.sessionStorage.getItem('scrollPosition') || '0');
+    setTimeout(() => window.scrollTo(0, scrollPosition), 50);
   };
 
   // Handle keyboard events for modal
@@ -176,8 +168,23 @@ export default function LocalGalleryView() {
     };
   }, [modalImage]);
   
-  // We're removing the scrollIntoView effect that was causing page movement
-  // The modal is already positioned with fixed positioning, so this isn't needed
+  // Ensure the modal is visible at the user's current position
+  useEffect(() => {
+    if (modalImage) {
+      // Make sure modal is positioned in visible area
+      setTimeout(() => {
+        const container = document.getElementById('modalImageContainer');
+        if (container) {
+          // Handle viewport differently based on screen width (mobile vs desktop)
+          const isMobile = window.innerWidth < 640; // sm breakpoint in Tailwind
+          container.scrollIntoView({ 
+            behavior: 'auto',
+            block: isMobile ? 'start' : 'center' // Start position on mobile, center on desktop
+          });
+        }
+      }, 100);
+    }
+  }, [modalImage]);
 
   // Format date
   const formatDate = (dateString?: string) => {
