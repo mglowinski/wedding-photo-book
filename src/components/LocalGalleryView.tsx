@@ -136,8 +136,18 @@ export default function LocalGalleryView() {
     }
   };
 
-  // Open image in modal
-  const openImageModal = (file: LocalFile) => {
+  // Open image modal
+  const openImageModal = (file: LocalFile, e?: React.MouseEvent) => {
+    // Stop event propagation if event is provided
+    if (e) {
+      e.stopPropagation();
+    }
+    
+    // If there's already a modal open, close it first
+    if (modalImage) {
+      closeImageModal();
+    }
+    
     // Capture current scroll position
     const currentScrollY = window.scrollY;
     setModalScrollY(currentScrollY);
@@ -161,6 +171,24 @@ export default function LocalGalleryView() {
     const scrollPosition = parseInt(window.sessionStorage.getItem('scrollPosition') || '0');
     setTimeout(() => window.scrollTo(0, scrollPosition), 50);
   };
+
+  // Handle global click events
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (modalImage) {
+        closeImageModal();
+      }
+    };
+
+    // Add event listener for global clicks if modal is open
+    if (modalImage) {
+      document.addEventListener('click', handleGlobalClick);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, [modalImage]);
 
   // Handle keyboard events for modal
   useEffect(() => {
@@ -276,12 +304,14 @@ export default function LocalGalleryView() {
               <div 
                 className="relative overflow-hidden p-1 sm:p-2 flex-grow flex items-center justify-center"
                 id="modalImageContainer"
+                onClick={(e) => e.stopPropagation()}
               >
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
                   className="max-h-[80vh] w-auto object-contain"
                   style={{ maxWidth: '95%', minWidth: '250px' }}
+                  onClick={(e) => e.stopPropagation()}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
@@ -434,7 +464,7 @@ export default function LocalGalleryView() {
                   {file.type === 'photo' && (
                     <div 
                       className="relative w-full h-36 sm:h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
-                      onClick={() => openImageModal(file)}
+                      onClick={(e) => openImageModal(file, e)}
                     >
                       <img
                         src={file.url}
