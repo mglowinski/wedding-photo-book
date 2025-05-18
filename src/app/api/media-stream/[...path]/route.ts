@@ -49,6 +49,9 @@ export async function GET(
       case '.wav': contentType = 'audio/wav'; break;
     }
     
+    // Check if this is a download request
+    const isDownload = request.nextUrl.searchParams.get('download') === 'true';
+    
     // Get range header from request
     const rangeHeader = request.headers.get('range');
     
@@ -56,13 +59,21 @@ export async function GET(
     if (!rangeHeader) {
       const fileBuffer = fs.readFileSync(fullPath);
       
+      const headers: HeadersInit = {
+        'Content-Type': contentType,
+        'Content-Length': fileSize.toString(),
+        'Accept-Ranges': 'bytes',
+      };
+      
+      // Add Content-Disposition for downloads to force the browser to download rather than display
+      if (isDownload) {
+        const fileName = path.basename(fullPath);
+        headers['Content-Disposition'] = `attachment; filename="${fileName}"`;
+      }
+      
       return new NextResponse(fileBuffer, {
         status: 200,
-        headers: {
-          'Content-Type': contentType,
-          'Content-Length': fileSize.toString(),
-          'Accept-Ranges': 'bytes',
-        }
+        headers
       });
     }
     
@@ -97,16 +108,25 @@ export async function GET(
     }
     const buffer = Buffer.concat(chunks);
     
+    // Prepare headers
+    const headers: HeadersInit = {
+      'Content-Type': contentType,
+      'Content-Length': contentLength.toString(),
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+    };
+    
+    // Add Content-Disposition for downloads
+    if (isDownload) {
+      const fileName = path.basename(fullPath);
+      headers['Content-Disposition'] = `attachment; filename="${fileName}"`;
+    }
+    
     // Return response with correct headers
     return new NextResponse(buffer, {
       status: 206, // Partial Content
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': contentLength.toString(),
-        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-        'Accept-Ranges': 'bytes',
-        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
-      }
+      headers
     });
   } catch (error) {
     console.error('Error streaming media:', error);
