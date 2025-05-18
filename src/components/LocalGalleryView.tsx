@@ -247,7 +247,7 @@ export default function LocalGalleryView() {
         >
           <div className="w-full h-full flex items-center justify-center p-2 sm:p-4">
             <button 
-              className="absolute top-0 right-0 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 z-50 shadow-lg"
+              className="absolute top-0 right-0 bg-white text-black p-2 rounded-full hover:bg-gray-100 z-50 shadow-lg"
               style={{
                 top: '5px',
                 right: '5px',
@@ -256,7 +256,7 @@ export default function LocalGalleryView() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px solid white'
+                border: '1px solid rgba(0,0,0,0.2)'
               }}
               onClick={(e) => {
                 e.stopPropagation();
