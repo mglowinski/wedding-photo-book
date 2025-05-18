@@ -235,13 +235,13 @@ export default function LocalGalleryView() {
             left: '50%',
             transform: 'translateX(-50%)',
             width: 'auto',
-            minWidth: '300px',
-            maxWidth: '90%',
+            minWidth: '90%',
+            maxWidth: '95%',
             height: 'auto',
-            maxHeight: '80vh',
-            padding: '20px',
-            borderRadius: '10px',
-            backgroundColor: 'rgba(0, 0, 0, 0.4)'
+            maxHeight: '90vh',
+            padding: '15px',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.65)'
           }}
           onClick={closeImageModal}
         >
@@ -262,10 +262,12 @@ export default function LocalGalleryView() {
             </button>
             
             <div 
-              className="bg-white bg-opacity-90 rounded-lg shadow-lg overflow-hidden flex flex-col"
+              className="bg-white bg-opacity-95 rounded-lg shadow-lg overflow-hidden flex flex-col"
               style={{ 
                 maxWidth: '100%',
-                maxHeight: '100%'
+                maxHeight: '100%',
+                minHeight: '200px',
+                minWidth: '200px'
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -277,8 +279,8 @@ export default function LocalGalleryView() {
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[60vh] w-auto object-contain"
-                  style={{ maxWidth: '100%' }}
+                  className="max-h-[75vh] w-auto object-contain"
+                  style={{ maxWidth: '100%', minWidth: '200px' }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
