@@ -26,6 +26,10 @@ export default function LocalGalleryView() {
   const [modalScrollY, setModalScrollY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [downloadingFileUrl, setDownloadingFileUrl] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const filesPerPage = 12; // 4 rows of 3 items for desktop
 
   // Function to determine file type based on URL
   const determineFileType = (url: string): FileType => {
@@ -88,6 +92,23 @@ export default function LocalGalleryView() {
   const filteredFiles = filter === 'all' 
     ? files 
     : files.filter(file => file.type === filter);
+  
+  // Calculate pagination values
+  const totalFiles = filteredFiles.length;
+  const totalPages = Math.ceil(totalFiles / filesPerPage);
+  
+  // Get the current page files
+  const currentFiles = filteredFiles.slice(
+    (currentPage - 1) * filesPerPage,
+    currentPage * filesPerPage
+  );
+  
+  // Function to change page
+  const goToPage = (page: number) => {
+    // Scroll to top when changing pages for better UX
+    window.scrollTo(0, 0);
+    setCurrentPage(page);
+  };
 
   // Handle file download with streaming support for large files
   const handleDownload = async (url: string, fileName: string) => {
@@ -454,133 +475,201 @@ export default function LocalGalleryView() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredFiles.map((file, index) => (
-            <div key={index} className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-3 sm:p-4">
-                <div className="flex justify-between items-start mb-2 sm:mb-3">
-                  <div className="text-xs font-medium text-black">
-                    {formatDate(file.createdAt)}
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {currentFiles.map((file, index) => (
+              <div key={index} className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4">
+                  <div className="flex justify-between items-start mb-2 sm:mb-3">
+                    <div className="text-xs font-medium text-black">
+                      {formatDate(file.createdAt)}
+                    </div>
+                    <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                      <span className="text-xs bg-gray-100 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+                        {file.type === 'photo' 
+                          ? 'zdjęcie' 
+                          : file.type === 'video' 
+                            ? 'wideo' 
+                            : file.type === 'audio' 
+                              ? 'audio' 
+                              : file.type}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                    <span className="text-xs bg-gray-100 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
-                      {file.type === 'photo' 
-                        ? 'zdjęcie' 
-                        : file.type === 'video' 
-                          ? 'wideo' 
-                          : file.type === 'audio' 
-                            ? 'audio' 
-                            : file.type}
-                    </span>
-                  </div>
-                </div>
 
-                {file.message && (
-                  <div className="mb-2 sm:mb-3 text-xs sm:text-sm text-gray-600 flex items-start">
-                    <FiMessageCircle className="text-gray-400 mr-1 sm:mr-1.5 mt-0.5 flex-shrink-0" />
-                    <p className="line-clamp-2">{file.message}</p>
-                  </div>
-                )}
-
-                <div className="mb-3 sm:mb-4">
-                  {file.type === 'photo' && (
-                    <div 
-                      className="relative w-full h-36 sm:h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
-                      onClick={(e) => openImageModal(file, e)}
-                    >
-                      <img
-                        src={file.url}
-                        alt={file.fileName || 'Zdjęcie'}
-                        className="object-cover w-full h-full"
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null;
-                          target.style.display = 'none';
-                          // Replace with an inline error indicator
-                          const container = target.parentElement;
-                          if (container) {
-                            const errorDiv = document.createElement('div');
-                            errorDiv.className = 'flex flex-col items-center justify-center bg-gray-100 w-full h-full rounded-md';
-                            errorDiv.innerHTML = `
-                              <div class="text-red-500 mb-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle">
-                                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                                  <line x1="12" y1="9" x2="12" y2="13"></line>
-                                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                                </svg>
-                              </div>
-                              <p class="text-gray-700 text-sm">Błąd obrazu</p>
-                            `;
-                            container.appendChild(errorDiv);
-                          }
-                          console.error('Error loading image:', file.url);
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity">
-                      </div>
+                  {file.message && (
+                    <div className="mb-2 sm:mb-3 text-xs sm:text-sm text-gray-600 flex items-start">
+                      <FiMessageCircle className="text-gray-400 mr-1 sm:mr-1.5 mt-0.5 flex-shrink-0" />
+                      <p className="line-clamp-2">{file.message}</p>
                     </div>
                   )}
-                  
-                  {file.type === 'video' && (
-                    <video 
-                      controls 
-                      className="w-full rounded-md"
-                      src={file.url}
-                    >
-                      Twoja przeglądarka nie obsługuje odtwarzania wideo.
-                    </video>
-                  )}
-                  
-                  {file.type === 'audio' && (
-                    <audio 
-                      controls 
-                      className="w-full"
-                      src={file.url}
-                    >
-                      Twoja przeglądarka nie obsługuje odtwarzania audio.
-                    </audio>
-                  )}
-                  
-                  {file.type === 'other' && (
-                    <div className="text-center p-4 bg-gray-50 rounded-md">
-                      <a 
-                        href={file.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
+
+                  <div className="mb-3 sm:mb-4">
+                    {file.type === 'photo' && (
+                      <div 
+                        className="relative w-full h-36 sm:h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
+                        onClick={(e) => openImageModal(file, e)}
                       >
-                        Zobacz plik
-                      </a>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div className="text-xs text-gray-500 truncate max-w-[65%]">
-                    {formatDate(file.createdAt)}
-                  </div>
-                  <button
-                    onClick={() => handleDownload(file.url, file.fileName || '')}
-                    disabled={downloadingFileUrl === file.url}
-                    className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
-                  >
-                    {downloadingFileUrl === file.url ? (
-                      <>
-                        <span className="mr-1.5 w-3 h-3 rounded-full bg-primary animate-pulse"></span>
-                        Pobieranie...
-                      </>
-                    ) : (
-                      <>
-                        <FiDownload className="mr-1" /> Pobierz
-                      </>
+                        <img
+                          src={file.url}
+                          alt={file.fileName || 'Zdjęcie'}
+                          className="object-cover w-full h-full"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.style.display = 'none';
+                            // Replace with an inline error indicator
+                            const container = target.parentElement;
+                            if (container) {
+                              const errorDiv = document.createElement('div');
+                              errorDiv.className = 'flex flex-col items-center justify-center bg-gray-100 w-full h-full rounded-md';
+                              errorDiv.innerHTML = `
+                                <div class="text-red-500 mb-2">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                  </svg>
+                                </div>
+                                <p class="text-gray-700 text-sm">Błąd obrazu</p>
+                              `;
+                              container.appendChild(errorDiv);
+                            }
+                            console.error('Error loading image:', file.url);
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity">
+                        </div>
+                      </div>
                     )}
-                  </button>
+                    
+                    {file.type === 'video' && (
+                      <video 
+                        controls 
+                        className="w-full rounded-md"
+                        src={file.url}
+                      >
+                        Twoja przeglądarka nie obsługuje odtwarzania wideo.
+                      </video>
+                    )}
+                    
+                    {file.type === 'audio' && (
+                      <audio 
+                        controls 
+                        className="w-full"
+                        src={file.url}
+                      >
+                        Twoja przeglądarka nie obsługuje odtwarzania audio.
+                      </audio>
+                    )}
+                    
+                    {file.type === 'other' && (
+                      <div className="text-center p-4 bg-gray-50 rounded-md">
+                        <a 
+                          href={file.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Zobacz plik
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="text-xs text-gray-500 truncate max-w-[65%]">
+                      {formatDate(file.createdAt)}
+                    </div>
+                    <button
+                      onClick={() => handleDownload(file.url, file.fileName || '')}
+                      disabled={downloadingFileUrl === file.url}
+                      className="flex items-center text-primary hover:text-primary/80 text-xs sm:text-sm"
+                    >
+                      {downloadingFileUrl === file.url ? (
+                        <>
+                          <span className="mr-1.5 w-3 h-3 rounded-full bg-primary animate-pulse"></span>
+                          Pobieranie...
+                        </>
+                      ) : (
+                        <>
+                          <FiDownload className="mr-1" /> Pobierz
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center space-x-2 mt-8 mb-4">
+              <button
+                onClick={() => goToPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === 1 
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                    : 'bg-gray-200 text-black hover:bg-gray-300'
+                }`}
+                aria-label="Previous page"
+              >
+                &laquo;
+              </button>
+              
+              {/* Page number buttons with dynamic range */}
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                // Show pages around current page
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  // If 5 or fewer pages, show all
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  // If near start, show first 5 pages
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  // If near end, show last 5 pages
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  // Otherwise show current and 2 pages on each side
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => goToPage(pageNum)}
+                    className={`w-8 h-8 rounded-md ${
+                      pageNum === currentPage 
+                        ? 'bg-primary text-white' 
+                        : 'bg-gray-200 text-black hover:bg-gray-300'
+                    }`}
+                    aria-label={`Page ${pageNum}`}
+                    aria-current={pageNum === currentPage ? 'page' : undefined}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              
+              <button
+                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === totalPages 
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                    : 'bg-gray-200 text-black hover:bg-gray-300'
+                }`}
+                aria-label="Next page"
+              >
+                &raquo;
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
