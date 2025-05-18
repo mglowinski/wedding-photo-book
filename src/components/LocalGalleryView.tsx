@@ -175,10 +175,11 @@ export default function LocalGalleryView() {
       setTimeout(() => {
         const container = document.getElementById('modalImageContainer');
         if (container) {
-          // Center in viewport
+          // Handle viewport differently based on screen width (mobile vs desktop)
+          const isMobile = window.innerWidth < 640; // sm breakpoint in Tailwind
           container.scrollIntoView({ 
             behavior: 'auto',
-            block: 'center'
+            block: isMobile ? 'start' : 'center' // Start position on mobile, center on desktop
           });
         }
       }, 100);
@@ -244,7 +245,7 @@ export default function LocalGalleryView() {
           }}
           onClick={closeImageModal}
         >
-          <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-4">
+          <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
             <button 
               className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-black bg-opacity-50 text-white p-1.5 rounded-full hover:bg-opacity-80 z-10"
               onClick={(e) => {
@@ -256,7 +257,7 @@ export default function LocalGalleryView() {
             </button>
             
             <div 
-              className="bg-white bg-opacity-90 rounded-lg shadow-lg overflow-hidden w-[90vw] max-h-[85vh] sm:max-w-[85%] md:max-w-2xl lg:max-w-3xl flex flex-col"
+              className="bg-white bg-opacity-90 rounded-lg shadow-lg overflow-hidden w-[90vw] max-h-[70vh] sm:max-h-[80vh] sm:max-w-[85%] md:max-w-2xl lg:max-w-3xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Image container with automatically adjusted position */}
@@ -267,7 +268,7 @@ export default function LocalGalleryView() {
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[75vh] sm:max-h-[55vh] w-auto max-w-[85vw] sm:max-w-[90%] object-contain"
+                  className="max-h-[50vh] sm:max-h-[55vh] w-auto max-w-[85vw] sm:max-w-[90%] object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
@@ -295,7 +296,7 @@ export default function LocalGalleryView() {
               </div>
               
               {/* Info footer */}
-              <div className="p-2 sm:p-3 border-t border-gray-100">
+              <div className="py-1 px-2 sm:p-3 border-t border-gray-100">
                 {modalImage.message && (
                   <div className="mb-2 text-gray-600 flex items-start">
                     <FiMessageCircle className="text-gray-400 mr-1 mt-0.5 flex-shrink-0" />
