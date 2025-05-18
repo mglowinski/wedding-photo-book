@@ -228,13 +228,14 @@ export default function LocalGalleryView() {
       {/* Image Modal - positioned at current scroll */}
       {modalImage && (
         <div 
-          className="fixed z-50 flex items-center justify-center bg-black bg-opacity-75 touch-none" 
+          className="fixed z-50 flex items-center justify-center touch-none" 
           style={{ 
             position: 'fixed',
             top: `${modalScrollY}px`,
             left: '0',
             width: '100%',
-            height: '100vh'
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)'
           }}
           onClick={closeImageModal}
         >
@@ -250,7 +251,8 @@ export default function LocalGalleryView() {
             </button>
             
             <div 
-              className="bg-white bg-opacity-90 rounded-lg shadow-lg overflow-hidden w-[90vw] max-h-[70vh] sm:max-h-[80vh] sm:max-w-[85%] md:max-w-2xl lg:max-w-3xl flex flex-col"
+              className="bg-white bg-opacity-90 rounded-lg shadow-lg overflow-hidden max-w-fit max-h-fit sm:max-w-[80%] md:max-w-2xl lg:max-w-3xl flex flex-col"
+              style={{ maxWidth: 'fit-content' }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Image container with automatically adjusted position */}
@@ -261,7 +263,7 @@ export default function LocalGalleryView() {
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[60vh] sm:max-h-[60vh] w-auto max-w-[90vw] sm:max-w-full object-contain"
+                  className="max-h-[50vh] sm:max-h-[60vh] w-auto max-w-[85vw] sm:max-w-[70vw] md:max-w-[60vw] object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
