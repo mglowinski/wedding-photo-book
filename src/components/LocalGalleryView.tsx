@@ -136,7 +136,7 @@ export default function LocalGalleryView() {
     }
   };
 
-  // Open image in modal
+  // Open image modal
   const openImageModal = (file: LocalFile) => {
     // Capture current scroll position
     const currentScrollY = window.scrollY;
@@ -150,6 +150,20 @@ export default function LocalGalleryView() {
     
     // Prevent scrolling on body when modal is open
     document.body.style.overflow = 'hidden';
+  };
+
+  // Handle modal image click
+  const handleModalImageClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent event from reaching the overlay
+    e.stopPropagation();
+  };
+
+  // Handle download button click within modal
+  const handleModalDownloadClick = (e: React.MouseEvent, url: string, fileName: string) => {
+    // Stop propagation to prevent event from reaching the overlay
+    e.stopPropagation();
+    // Handle download
+    handleDownload(url, fileName);
   };
 
   // Close image modal
@@ -225,28 +239,24 @@ export default function LocalGalleryView() {
 
   return (
     <div>
-      {/* Image Modal - positioned at current scroll */}
+      {/* Image Modal - full screen overlay */}
       {modalImage && (
         <div 
-          className="fixed z-50 flex items-center justify-center touch-none" 
-          style={{ 
-            position: 'fixed',
-            top: `${modalScrollY}px`,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'auto',
-            padding: '0',
-            borderRadius: '8px',
-            backgroundColor: 'rgba(0, 0, 0, 0.75)'
-          }}
+          className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center"
           onClick={closeImageModal}
         >
-          <div className="w-full h-full flex items-center justify-center p-2 sm:p-4">
+          <div 
+            className="relative bg-white bg-opacity-95 rounded-lg shadow-lg overflow-hidden flex flex-col max-w-xl mx-auto"
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '85vh',
+              marginTop: `${modalScrollY > 100 ? 50 : 0}px`
+            }}
+            onClick={handleModalImageClick}
+          >
             <button 
-              className="absolute top-0 right-0 bg-white text-black p-2 rounded-full hover:bg-gray-100 z-50 shadow-lg"
+              className="absolute top-2 right-2 bg-white text-black p-2 rounded-full hover:bg-gray-100 z-50 shadow-lg"
               style={{
-                top: '5px',
-                right: '5px',
                 width: '36px',
                 height: '36px',
                 display: 'flex',
@@ -254,91 +264,77 @@ export default function LocalGalleryView() {
                 justifyContent: 'center',
                 border: '1px solid rgba(0,0,0,0.2)'
               }}
-              onClick={(e) => {
-                e.stopPropagation();
-                closeImageModal();
-              }}
+              onClick={closeImageModal}
             >
               <FiX size={24} />
             </button>
             
+            {/* Image container */}
             <div 
-              className="bg-white bg-opacity-95 rounded-lg shadow-lg overflow-hidden flex flex-col"
-              style={{ 
-                maxWidth: '90vw',
-                maxHeight: '85vh',
-                width: 'auto',
-                height: 'auto'
-              }}
-              onClick={closeImageModal}
+              className="relative overflow-hidden p-1 sm:p-2 flex-grow flex items-center justify-center"
+              id="modalImageContainer"
             >
-              {/* Image container with automatically adjusted position */}
-              <div 
-                className="relative overflow-hidden p-1 sm:p-2 flex-grow flex items-center justify-center"
-                id="modalImageContainer"
-              >
-                <img
-                  src={modalImage.url}
-                  alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[80vh] w-auto object-contain"
-                  style={{ maxWidth: '95%', minWidth: '250px' }}
-                  onClick={closeImageModal}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.style.display = 'none';
-                    // Replace with an inline error indicator
-                    const container = target.parentElement;
-                    if (container) {
-                      const errorDiv = document.createElement('div');
-                      errorDiv.className = 'flex flex-col items-center justify-center bg-gray-100 w-full h-64 rounded-md';
-                      errorDiv.innerHTML = `
-                        <div class="text-red-500 mb-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                            <line x1="12" y1="9" x2="12" y2="13"></line>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                          </svg>
-                        </div>
-                        <p class="text-gray-700">Nie można załadować zdjęcia</p>
-                      `;
-                      container.appendChild(errorDiv);
-                    }
-                    console.error('Error loading image:', modalImage.url);
-                  }}
-                />
-              </div>
-              
-              {/* Info footer */}
-              <div className="py-1 px-2 sm:p-3 border-t border-gray-100" onClick={closeImageModal}>
-                {modalImage.message && (
-                  <div className="mb-2 text-gray-600 flex items-start">
-                    <FiMessageCircle className="text-gray-400 mr-1 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs">{modalImage.message}</p>
-                  </div>
-                )}
-                
-                <div className="flex justify-between items-center">
-                  <div className="text-xs text-gray-500 truncate max-w-[45%]">
-                    {formatDate(modalImage.createdAt)}
-                  </div>
-                  <button
-                    onClick={() => handleDownload(modalImage.url, modalImage.fileName || '')}
-                    disabled={downloadingFileUrl === modalImage.url}
-                    className="flex items-center text-primary hover:text-primary/80 text-xs"
-                  >
-                    {downloadingFileUrl === modalImage.url ? (
-                      <>
-                        <span className="mr-1.5 w-3 h-3 rounded-full bg-primary animate-pulse"></span>
-                        Pobieranie...
-                      </>
-                    ) : (
-                      <>
-                        <FiDownload className="mr-1" /> Pobierz
-                      </>
-                    )}
-                  </button>
+              <img
+                src={modalImage.url}
+                alt={modalImage.fileName || 'Zdjęcie'}
+                className="max-h-[80vh] w-auto object-contain"
+                style={{ maxWidth: '95%', minWidth: '250px' }}
+                onClick={closeImageModal}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.style.display = 'none';
+                  // Replace with an inline error indicator
+                  const container = target.parentElement;
+                  if (container) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'flex flex-col items-center justify-center bg-gray-100 w-full h-64 rounded-md';
+                    errorDiv.innerHTML = `
+                      <div class="text-red-500 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                          <line x1="12" y1="9" x2="12" y2="13"></line>
+                          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                      </div>
+                      <p class="text-gray-700">Nie można załadować zdjęcia</p>
+                    `;
+                    container.appendChild(errorDiv);
+                  }
+                  console.error('Error loading image:', modalImage.url);
+                }}
+              />
+            </div>
+            
+            {/* Info footer */}
+            <div className="py-1 px-2 sm:p-3 border-t border-gray-100">
+              {modalImage.message && (
+                <div className="mb-2 text-gray-600 flex items-start">
+                  <FiMessageCircle className="text-gray-400 mr-1 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs">{modalImage.message}</p>
                 </div>
+              )}
+              
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-gray-500 truncate max-w-[45%]">
+                  {formatDate(modalImage.createdAt)}
+                </div>
+                <button
+                  onClick={(e) => handleModalDownloadClick(e, modalImage.url, modalImage.fileName || '')}
+                  disabled={downloadingFileUrl === modalImage.url}
+                  className="flex items-center text-primary hover:text-primary/80 text-xs"
+                >
+                  {downloadingFileUrl === modalImage.url ? (
+                    <>
+                      <span className="mr-1.5 w-3 h-3 rounded-full bg-primary animate-pulse"></span>
+                      Pobieranie...
+                    </>
+                  ) : (
+                    <>
+                      <FiDownload className="mr-1" /> Pobierz
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
