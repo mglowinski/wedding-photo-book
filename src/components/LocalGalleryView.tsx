@@ -232,16 +232,27 @@ export default function LocalGalleryView() {
           style={{ 
             position: 'fixed',
             top: `${modalScrollY}px`,
-            left: '0',
-            width: '100%',
-            height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)'
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'auto',
+            minWidth: '300px',
+            maxWidth: '90%',
+            height: 'auto',
+            maxHeight: '80vh',
+            padding: '20px',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)'
           }}
           onClick={closeImageModal}
         >
           <div className="w-full h-full flex items-center justify-center p-2 sm:p-4">
             <button 
-              className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white bg-opacity-80 text-black p-2 rounded-full hover:bg-opacity-100 z-50 shadow-md"
+              className="absolute top-0 right-0 bg-white bg-opacity-80 text-black p-2 rounded-full hover:bg-opacity-100 z-50 shadow-md"
+              style={{
+                top: '-10px',
+                right: '-10px',
+                transform: 'translate(30%, -30%)'
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 closeImageModal();
@@ -251,8 +262,11 @@ export default function LocalGalleryView() {
             </button>
             
             <div 
-              className="bg-white bg-opacity-90 rounded-lg shadow-lg overflow-hidden max-w-fit max-h-fit sm:max-w-[80%] md:max-w-2xl lg:max-w-3xl flex flex-col"
-              style={{ maxWidth: 'fit-content' }}
+              className="bg-white bg-opacity-90 rounded-lg shadow-lg overflow-hidden flex flex-col"
+              style={{ 
+                maxWidth: '100%',
+                maxHeight: '100%'
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Image container with automatically adjusted position */}
@@ -263,7 +277,8 @@ export default function LocalGalleryView() {
                 <img
                   src={modalImage.url}
                   alt={modalImage.fileName || 'Zdjęcie'}
-                  className="max-h-[50vh] sm:max-h-[60vh] w-auto max-w-[85vw] sm:max-w-[70vw] md:max-w-[60vw] object-contain"
+                  className="max-h-[60vh] w-auto object-contain"
+                  style={{ maxWidth: '100%' }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
