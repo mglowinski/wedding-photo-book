@@ -23,6 +23,7 @@ export default function LocalGalleryView() {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [modalImage, setModalImage] = useState<LocalFile | null>(null);
+  const [modalScrollY, setModalScrollY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [downloadingFileUrl, setDownloadingFileUrl] = useState<string | null>(null);
 
@@ -137,9 +138,16 @@ export default function LocalGalleryView() {
 
   // Open image in modal
   const openImageModal = (file: LocalFile) => {
+    // Capture current scroll position
+    const currentScrollY = window.scrollY;
+    setModalScrollY(currentScrollY);
+    
+    // Set modal image
     setModalImage(file);
-    // Store current scroll position
-    window.sessionStorage.setItem('scrollPosition', window.scrollY.toString());
+    
+    // Store the scroll position
+    window.sessionStorage.setItem('scrollPosition', currentScrollY.toString());
+    
     // Prevent scrolling on body when modal is open
     document.body.style.overflow = 'hidden';
   };
@@ -220,13 +228,13 @@ export default function LocalGalleryView() {
       {/* Image Modal - positioned at current scroll */}
       {modalImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 touch-none" 
+          className="fixed z-50 flex items-center justify-center bg-black bg-opacity-75 touch-none" 
           style={{ 
             position: 'fixed',
-            top: '0',
+            top: `${modalScrollY}px`,
             left: '0',
             width: '100%',
-            height: '100%'
+            height: '100vh'
           }}
           onClick={closeImageModal}
         >
