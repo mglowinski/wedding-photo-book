@@ -14,7 +14,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
 
   // In a real app, you would verify this with a backend service
   // This is just for demonstration
-  const correctPassword = 'birthday2025'; 
+  const correctPassword = 'asiaimaciek1419'; 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
